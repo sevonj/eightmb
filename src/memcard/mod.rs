@@ -95,8 +95,8 @@ impl MemoryCard {
         Directory::read_root(&mut BufReader::new(raw.as_slice()))
     }
 
-    pub fn read_directory(&self, cluster: usize, entry: &Entry) -> Result<Directory, MemcardError> {
-        let raw = self.read_entry(cluster)?;
+    pub fn read_directory(&self, entry: &Entry) -> Result<Directory, MemcardError> {
+        let raw = self.read_entry(entry.cluster as usize)?;
         Directory::read(&mut BufReader::new(raw.as_slice()), entry)
     }
 }

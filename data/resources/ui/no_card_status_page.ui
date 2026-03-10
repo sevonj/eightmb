@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <template class="NoCardStatusPage" parent="AdwBin">
+        <property name="hexpand">True</property>
+        <property name="vexpand">True</property>
+        <property name="halign">GTK_ALIGN_CENTER</property>
+        <property name="width-request">500</property>
+        <child>
+            <object class="AdwStatusPage">
+                <property name="title" translatable="yes">Nothing Open</property>
+                <property name="description" translatable="yes">Open a memory card</property>
+                <style>
+                    <class name="compact" />
+                </style>
+            </object>
+        </child>
+    </template>
+</interface>

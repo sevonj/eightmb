@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <!-- Keep file paths in the same order as they'd appear in the IDE: alphanumeric, folders first -->
+  <gresource prefix="/eightmb">
+    <file preprocess="xml-stripblanks" compressed="true">ui/mc_inspector/fat_entry_row.ui</file>
+    <file preprocess="xml-stripblanks" compressed="true">ui/mc_inspector/file_browser.ui</file>
+    <file preprocess="xml-stripblanks" compressed="true">ui/about_dialog.ui</file>
+    <file preprocess="xml-stripblanks" compressed="true">ui/no_card_status_page.ui</file>
+    <file preprocess="xml-stripblanks" compressed="true">ui/window.ui</file>
+  </gresource>
+  <gresource prefix="/eightmb">
+    <file preprocess="xml-stripblanks">icons/scalable/actions/ps2-memcard-symbolic.svg</file>
+  </gresource>
+  <gresource prefix="/eightmb">
+    <file>icons/hicolor/scalable/apps/com.github.sevonj.eightmb.png</file>
+  </gresource>
+</gresources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <object class="AdwAboutDialog" id="dialog">
+    <property name="application_name" translatable="no">EightMB</property>
+    <property name="developer_name" translatable="no">Sevonj</property>
+    <property name="application_icon" translatable="no">com.github.sevonj.eightmb</property>
+  </object>
+</interface>

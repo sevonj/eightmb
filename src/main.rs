@@ -1,4 +1,5 @@
-use std::fmt::format;
+mod widgets;
+
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
@@ -9,9 +10,45 @@ use eightmb::memcard::Directory;
 use eightmb::memcard::Entry;
 use eightmb::memcard::MemoryCard;
 
+use gtk::gio::SimpleAction;
+use gtk::glib;
+use gtk::prelude::*;
+
+use widgets::Window;
+
+const APP_ID: &str = "com.github.sevonj.eightmb";
+
+fn main() -> glib::ExitCode {
+    gtk::gio::resources_register_include!("gresources.gresource")
+        .expect("Failed to register resources.");
+
+    let app = adw::Application::builder().application_id(APP_ID).build();
+    setup_accels(&app);
+
+    app.connect_activate(|app| {
+        if let Some(window) = app.windows().first() {
+            window.present();
+            return;
+        }
+
+        let window = Window::new(app);
+        window.add_action(&SimpleAction::new("eat-inspector", None));
+        window.add_action(&SimpleAction::new("eat-adaptive-preview", None));
+        window.set_title(Some("EightMB"));
+        window.present();
+    });
+
+    app.run()
+}
+
+fn setup_accels(app: &adw::Application) {
+    app.set_accels_for_action("win.eat-inspector", &["<ctrl><Shift>I"]);
+    app.set_accels_for_action("win.eat-adaptive-preview", &["<ctrl><Shift>M"]);
+}
+
 const PROJECT_ROOT_DIR: &str = env!("CARGO_MANIFEST_DIR");
 
-fn main() {
+fn main_old() {
     let temp_dir = PathBuf::from(PROJECT_ROOT_DIR).join("temp");
 
     let f = File::open("samples/Mcd001.ps2").unwrap();
@@ -71,7 +108,7 @@ fn dump_filesystem(memcard: &MemoryCard, dir: &Directory, out_dir: &Path) {
         let cluster = entry.cluster as usize;
 
         if entry.is_dir() {
-            let subdir = match memcard.read_directory(cluster, &entry) {
+            let subdir = match memcard.read_directory(&entry) {
                 Ok(dir) => dir,
                 Err(e) => {
                     println!("'{entry_path:?}' - {e:?}");
@@ -101,9 +138,7 @@ fn print_fs_tree(memcard: &MemoryCard) {
             if entry.is_dir() {
                 let path = format!("{prefix}{}/", entry.name());
                 println!("{path}    {}", entry.cluster);
-                let subdir = memcard
-                    .read_directory(entry.cluster as usize, &entry)
-                    .unwrap();
+                let subdir = memcard.read_directory(&entry).unwrap();
                 print_inner(memcard, &subdir, &path);
             } else {
                 println!("{prefix}{}    {}", entry.name(), entry.cluster);

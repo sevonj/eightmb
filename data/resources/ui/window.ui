@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.14" />
+  <requires lib="libadwaita" version="1.5" />
+  <template class="Window" parent="AdwApplicationWindow">
+    <property name="width-request">640</property>
+    <property name="height-request">480</property>
+    <child>
+      <object class="AdwNavigationPage">
+        <property name="title" translatable="no">EightMB</property>
+        <property name="child">
+          <object class="AdwToolbarView" id="main_toolbar_view">
+            <child type="top">
+              <object class="GtkRevealer">
+                <property name="reveal-child">True</property>
+                <child>
+                  <object class="AdwHeaderBar">
+                    <property name="show-start-title-buttons">False</property>
+                    <property name="show-end-title-buttons">True</property>
+                    <child type="end">
+                      <object class="GtkMenuButton">
+                        <property name="primary">True</property>
+                        <property name="icon-name">open-menu-symbolic</property>
+                        <property name="tooltip-text" translatable="yes">Menu</property>
+                        <property name="menu-model">primary_menu</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </property>
+      </object>
+    </child>
+  </template>
+  <menu id="primary_menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Open Memory Card</attribute>
+        <attribute name="action">win.open-memcard</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Dump File System</attribute>
+        <attribute name="action">win.dump-filesystem</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Preferences</attribute>
+        <attribute name="action">win.preferences</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Keyboard Shortcuts</attribute>
+        <attribute name="action">win.show-help-overlay</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">About Scratchmark</attribute>
+        <attribute name="action">win.show-about</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>
