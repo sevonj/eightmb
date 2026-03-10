@@ -32,7 +32,7 @@ mod imp {
     impl BinImpl for McInspector {}
 
     impl McInspector {
-        pub(super)  fn bind(&self, memcard: MemoryCard) {
+        pub(super) fn bind(&self, memcard: MemoryCard) {
             let obj = self.obj();
 
             self.memcard.set(memcard).unwrap();
@@ -43,8 +43,10 @@ mod imp {
     }
 }
 
+use std::path::Path;
+
 use adw::subclass::prelude::ObjectSubclassIsExt;
-use eightmb::memcard::MemoryCard;
+use eightmb::memcard::{self, MemoryCard};
 use gtk::glib;
 use gtk::glib::Object;
 
@@ -60,5 +62,11 @@ impl McInspector {
         let imp = obj.imp();
         imp.bind(memcard);
         obj
+    }
+
+    pub fn dump(&self, path: &Path) {
+        let memcard = self.imp().memcard.get().unwrap();
+        let root = memcard.root_directory().unwrap();
+        memcard::util::dump_filesystem(memcard, &root, path);
     }
 }

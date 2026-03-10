@@ -80,36 +80,60 @@ mod imp {
             let obj = self.obj();
 
             let action = SimpleAction::new("open-memcard", None);
-            action.connect_activate({
-                let obj = glib::clone::Downgrade::downgrade(&obj);
+            action.connect_activate(clone!(
+                #[weak]
+                obj,
                 move |_, _| {
-                    let Some(obj) = glib::clone::Upgrade::upgrade(&obj) else {
-                        glib::g_debug!(glib::CLONE_MACRO_LOG_DOMAIN, "Failed to upgrade `obj`",);
-                        return;
-                    };
-                    {
-                        let dialog = FileDialog::builder().build();
-                        dialog.open(
-                            Some(&obj),
-                            None::<&Cancellable>,
-                            clone!(
-                                #[weak]
-                                obj,
-                                move |result| {
-                                    if let Ok(file) = result
-                                        && let Some(path) = file.path()
-                                    {
-                                        let mut reader = BufReader::new(File::open(path).unwrap());
-                                        let memcard = MemoryCard::read(&mut reader).unwrap();
-                                        let insp = McInspector::new(memcard);
-                                        obj.imp().set_content(Some(insp.upcast()));
-                                    }
+                    let dialog = FileDialog::builder().build();
+                    dialog.open(
+                        Some(&obj),
+                        None::<&Cancellable>,
+                        clone!(
+                            #[weak]
+                            obj,
+                            move |result| {
+                                if let Ok(file) = result
+                                    && let Some(path) = file.path()
+                                {
+                                    let mut reader = BufReader::new(File::open(path).unwrap());
+                                    let memcard = MemoryCard::read(&mut reader).unwrap();
+                                    let insp = McInspector::new(memcard);
+                                    obj.imp().set_content(Some(insp.upcast()));
                                 }
-                            ),
-                        );
-                    }
+                            }
+                        ),
+                    );
                 }
-            });
+            ));
+            obj.add_action(&action);
+
+            let action = SimpleAction::new("dump-filesystem", None);
+            action.connect_activate(clone!(
+                #[weak]
+                obj,
+                move |_, _| {
+                    let dialog = FileDialog::builder().build();
+                    dialog.select_folder(
+                        Some(&obj),
+                        None::<&Cancellable>,
+                        clone!(
+                            #[weak]
+                            obj,
+                            move |result| {
+                                if let Ok(file) = result
+                                    && let Some(path) = file.path()
+                                {
+                                    let binding = obj.imp().child.borrow();
+                                    if let Some(insp) = binding.as_ref().and_then(|c| c.downcast_ref::<McInspector>()) {
+                                        let path = path.join("memcard_dump");
+                                        insp.dump(&path);
+                                    } 
+                                }
+                            }
+                        ),
+                    );
+                }
+            ));
             obj.add_action(&action);
 
             let action = SimpleAction::new("show-about", None);

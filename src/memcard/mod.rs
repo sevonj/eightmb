@@ -6,6 +6,7 @@ mod fat;
 mod page;
 mod superblock;
 mod timestamp;
+pub mod util;
 
 use std::io::{BufReader, Read};
 
