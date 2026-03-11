@@ -86,4 +86,8 @@ impl FatEntryRow {
         imp.entry.set(entry).expect("bind once");
         obj
     }
+
+    pub fn entry(&self) -> &Entry {
+        self.imp().entry.get().unwrap()
+    }
 }

@@ -1,8 +1,8 @@
-mod block;
 mod directory;
 mod entry;
 mod error;
 mod fat;
+mod icon_sys;
 mod page;
 mod superblock;
 mod timestamp;
@@ -10,11 +10,11 @@ pub mod util;
 
 use std::io::{BufReader, Read};
 
-pub use block::Block;
 pub use directory::Directory;
 pub use entry::Entry;
 pub use error::MemcardError;
 pub use fat::Fat;
+pub use icon_sys::IconSys;
 pub use page::Page;
 pub use superblock::Superblock;
 pub use timestamp::Timestamp;

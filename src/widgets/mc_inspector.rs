@@ -2,11 +2,14 @@ mod file_browser;
 
 mod imp {
     use std::cell::OnceCell;
+    use std::cell::RefCell;
     use std::sync::OnceLock;
 
     use adw::prelude::*;
     use adw::subclass::prelude::*;
     use gtk::glib;
+    use gtk::glib::closure_local;
+    use gtk::glib::property::PropertySet;
     use gtk::glib::subclass::Signal;
     use gtk::glib::types::StaticType;
 
@@ -17,6 +20,8 @@ mod imp {
     #[derive(Default)]
     pub struct McInspector {
         memcard: OnceCell<MemoryCard>,
+
+        file_browser: RefCell<Option<FileBrowser>>,
     }
 
     #[glib::object_subclass]
@@ -55,11 +60,43 @@ mod imp {
             let obj = self.obj();
 
             self.memcard.set(memcard).expect("bind once");
+
             let file_browser = FileBrowser::default();
+            self.file_browser.set(Some(file_browser.clone()));
+            file_browser.connect_closure(
+                "entry-selected",
+                true,
+                closure_local!(
+                    #[weak]
+                    obj,
+                    move |_: FileBrowser, cluster: u32| {
+                        obj.imp().preview_file(cluster);
+                    }
+                ),
+            );
             obj.set_child(Some(&file_browser));
             if let Err(e) = file_browser.refresh_fs(self.memcard()) {
                 obj.emit_by_name::<()>("toast", &[&e.to_string()]);
             };
+        }
+
+        fn preview_file(&self, cluster: u32) {
+            let obj = self.obj();
+
+            let binding = self.file_browser.borrow();
+            let Some(file_browser) = binding.as_ref() else {
+                return;
+            };
+
+            let raw = match self.memcard().read_entry(cluster as usize) {
+                Ok(raw) => raw,
+                Err(e) => {
+                    obj.emit_by_name::<()>("toast", &[&e.to_string()]);
+                    return;
+                }
+            };
+
+            file_browser.preview_file(raw.as_slice());
         }
     }
 }

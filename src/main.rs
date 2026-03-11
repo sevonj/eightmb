@@ -6,6 +6,9 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use eightmb::memcard::Directory;
+use eightmb::memcard::Entry;
+use eightmb::memcard::IconSys;
+use eightmb::memcard::MemcardError;
 use eightmb::memcard::MemoryCard;
 
 use gtk::gio::SimpleAction;
@@ -140,10 +143,32 @@ fn print_fs_tree(memcard: &MemoryCard) {
                 print_inner(memcard, &subdir, &path);
             } else {
                 println!("{prefix}{}    {}", entry.name(), entry.cluster);
+
+                if &entry.name() == "icon.sys" {
+                    match read_iconsys(memcard, entry) {
+                        Ok(iconsys) => {
+                            let title = iconsys.title();
+                            let list_icon = iconsys.list_icon();
+                            let copy_icon = iconsys.copy_icon();
+                            let delete_icon = iconsys.delete_icon();
+
+                            println!("title:       '{title}'");
+                            println!("list_icon:   '{list_icon}'");
+                            println!("copy_icon:   {copy_icon:?}");
+                            println!("delete_icon: {delete_icon:?}");
+                        }
+                        Err(e) => println!("{e}"),
+                    }
+                }
             }
         }
     }
 
     println!("/");
     print_inner(memcard, &root, "/");
+}
+
+fn read_iconsys(memcard: &MemoryCard, entry: &Entry) -> Result<IconSys, MemcardError> {
+    let raw = memcard.read_entry(entry.cluster as usize)?;
+    IconSys::read(&mut BufReader::new(raw.as_slice()))
 }

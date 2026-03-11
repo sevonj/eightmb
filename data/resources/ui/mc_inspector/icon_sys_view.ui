@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <template class="IconSysView" parent="AdwBin">
+        <child>
+            <object class="GtkBox">
+                <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
+                <child>
+                    <object class="AdwBin" id="preview_bin"></object>
+                </child>
+                <child>
+                    <object class="GtkBox">
+                        <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
+                        <child>
+                            <object class="GtkLabel" id="title">
+                                <attributes>
+                                    <attribute name="foreground" value="yellow" />
+                                </attributes>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkLabel" id="modified">
+                                <attributes>
+                                </attributes>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkLabel" id="size">
+                                <attributes>
+                                </attributes>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+    </template>
+</interface>

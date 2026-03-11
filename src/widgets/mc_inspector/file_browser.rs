@@ -1,19 +1,26 @@
 mod fat_entry_row;
+mod icon_sys_view;
 mod save_icon_view;
 
 mod imp {
+    use std::cell::RefCell;
+    use std::sync::OnceLock;
+
     use adw::NavigationPage;
     use adw::prelude::NavigationPageExt;
+    use adw::prelude::*;
     use adw::subclass::prelude::*;
     use eightmb::memcard::Directory;
     use eightmb::memcard::MemcardError;
     use gtk::CompositeTemplate;
     use gtk::ListBox;
+    use gtk::Widget;
     use gtk::glib;
 
     use eightmb::memcard::MemoryCard;
-
-    use crate::widgets::mc_inspector::file_browser::save_icon_view::SaveIconView;
+    use gtk::glib::clone;
+    use gtk::glib::property::PropertySet;
+    use gtk::glib::subclass::Signal;
 
     use super::fat_entry_row::FatEntryRow;
 
@@ -26,6 +33,8 @@ mod imp {
         content: TemplateChild<NavigationPage>,
         #[template_child]
         listbox: TemplateChild<ListBox>,
+
+        preview_widget: RefCell<Option<Widget>>,
     }
 
     #[glib::object_subclass]
@@ -44,8 +53,34 @@ mod imp {
     }
 
     impl ObjectImpl for FileBrowser {
+        fn signals() -> &'static [Signal] {
+            static SIGNALS: OnceLock<Vec<Signal>> = OnceLock::new();
+            SIGNALS.get_or_init(|| {
+                vec![
+                    // Param: Entry cluster index
+                    Signal::builder("entry-selected")
+                        .param_types([u32::static_type()])
+                        .build(),
+                ]
+            })
+        }
+
         fn constructed(&self) {
-            self.content.set_child(Some(&SaveIconView::default()));
+            let obj = self.obj();
+
+            self.listbox.connect_row_selected(clone!(
+                #[weak]
+                obj,
+                move |_listbox, row| {
+                    obj.imp().set_preview_widget(None);
+                    let Some(row) = row.map(|row| row.downcast_ref::<FatEntryRow>().expect("cast"))
+                    else {
+                        return;
+                    };
+                    obj.emit_by_name("entry-selected", &[&row.entry().cluster])
+                }
+            ));
+
             self.parent_constructed();
         }
     }
@@ -54,7 +89,7 @@ mod imp {
     impl BinImpl for FileBrowser {}
 
     impl FileBrowser {
-        pub fn refresh_fs(&self, memcard: &MemoryCard) -> Result<(), MemcardError> {
+        pub(super) fn refresh_fs(&self, memcard: &MemoryCard) -> Result<(), MemcardError> {
             self.listbox.remove_all();
             let root = memcard.root_directory()?;
 
@@ -81,13 +116,23 @@ mod imp {
 
             Ok(())
         }
+
+        pub(super) fn set_preview_widget(&self, widget: Option<Widget>) {
+            self.content.set_child(widget.as_ref());
+            self.preview_widget.set(widget);
+        }
     }
 }
 
+use std::io::BufReader;
+
 use adw::subclass::prelude::*;
-use eightmb::memcard::{MemcardError, MemoryCard};
+use eightmb::memcard::{IconSys, MemcardError, MemoryCard};
 use gtk::glib;
 use gtk::glib::Object;
+use gtk::glib::object::Cast;
+
+use crate::widgets::mc_inspector::file_browser::icon_sys_view::IconSysView;
 
 glib::wrapper! {
     pub struct FileBrowser(ObjectSubclass<imp::FileBrowser>)
@@ -104,5 +149,14 @@ impl Default for FileBrowser {
 impl FileBrowser {
     pub fn refresh_fs(&self, memcard: &MemoryCard) -> Result<(), MemcardError> {
         self.imp().refresh_fs(memcard)
+    }
+
+    pub fn preview_file(&self, raw: &[u8]) {
+        let Ok(iconsys) = IconSys::read(&mut BufReader::new(raw)) else {
+            return;
+        };
+
+        self.imp()
+            .set_preview_widget(Some(IconSysView::new(iconsys).upcast()));
     }
 }

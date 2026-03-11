@@ -35,22 +35,6 @@ impl Entry {
     pub const FLAG_0X4000: u16 = 0x4000;
     pub const FLAG_EXISTS: u16 = 0x8000;
 
-    pub fn read<R: Read>(reader: &mut R) -> Result<Self, MemcardError> {
-        let mut entry = Self::default();
-        entry.mode = read_u16(reader)?;
-        reader.read_exact(&mut [0; 2])?; // align
-        entry.len = read_u32(reader)?;
-        entry.created = Timestamp::read(reader)?;
-        entry.cluster = read_u32(reader)?;
-        entry.dir_entry = read_u32(reader)?;
-        entry.modified = Timestamp::read(reader)?;
-        entry.attr = read_u32(reader)?;
-        reader.read_exact(&mut [0; 0x1c])?; // align
-        reader.read_exact(&mut entry.name)?;
-        reader.read_exact(&mut [0; 0x1a0])?; // unused space?
-        Ok(entry)
-    }
-
     pub fn can_read(&self) -> bool {
         self.mode & Self::FLAG_READ != 0
     }
@@ -116,9 +100,30 @@ impl Entry {
     }
 
     pub fn name(&self) -> String {
-        String::from_utf8_lossy(&self.name)
-            .trim_end_matches('\0')
-            .to_owned()
+        filename_to_string(self.name.as_slice()).unwrap()
+    }
+
+    pub fn read<R: Read>(reader: &mut R) -> Result<Self, MemcardError> {
+        let mut entry = Self::default();
+        entry.mode = read_u16(reader)?;
+        reader.read_exact(&mut [0; 2])?; // align
+        entry.len = read_u32(reader)?;
+        entry.created = Timestamp::read(reader)?;
+        entry.cluster = read_u32(reader)?;
+        entry.dir_entry = read_u32(reader)?;
+        entry.modified = Timestamp::read(reader)?;
+        entry.attr = read_u32(reader)?;
+        reader.read_exact(&mut [0; 0x1c])?; // align
+        reader.read_exact(&mut entry.name)?;
+        reader.read_exact(&mut [0; 0x1a0])?; // unused space?
+
+        entry.validate()?;
+        Ok(entry)
+    }
+
+    pub fn validate(&self) -> Result<(), MemcardError> {
+        validate_filename(self.name.as_slice())?;
+        Ok(())
     }
 }
 

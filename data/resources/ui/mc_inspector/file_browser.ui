@@ -5,6 +5,7 @@
             <object class="AdwNavigationSplitView">
                 <property name="sidebar">
                     <object class="AdwNavigationPage" id="sidebar">
+                        <property name="title" translatable="no">Files</property>
                         <property name="child">
                             <object class="GtkScrolledWindow" id="scrolled_window">
                                 <child>
@@ -20,6 +21,7 @@
                 </property>
                 <property name="content">
                     <object class="AdwNavigationPage" id="content">
+                        <property name="title" translatable="no">Preview</property>
                         <property name="child">
                             <object class="GtkLabel">
                                 <property name="label" translatable="yes">Content</property>

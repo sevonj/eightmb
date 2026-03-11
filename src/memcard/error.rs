@@ -13,6 +13,10 @@ pub enum MemcardError {
     UnsupportedClustersTotal(u32),
     Ecc,
     FreeClusterAllocated,
+    FilenameInvalidCharacters,
+    FilenameIsEmpty,
+    FilenameIsntNullterminated,
+    StringDecodeFailed,
 }
 
 impl From<std::io::Error> for MemcardError {
@@ -52,6 +56,10 @@ impl std::fmt::Display for MemcardError {
             ),
             Ecc => write!(f, "Bad ECC. Is the card corrupted?"),
             FreeClusterAllocated => write!(f, "Entry contains a cluster that is marked free"),
+            FilenameInvalidCharacters => write!(f, "Filename contains invalid characters."),
+            FilenameIsEmpty => write!(f, "Filename is empty."),
+            FilenameIsntNullterminated => write!(f, "Filename isn't null-terminated."),
+            StringDecodeFailed => write!(f, "Couldn't decode string."),
         }
     }
 }
