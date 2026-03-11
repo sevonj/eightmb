@@ -46,7 +46,7 @@ fn setup_accels(app: &adw::Application) {
 
 fn main_old() {
     const PROJECT_ROOT_DIR: &str = env!("CARGO_MANIFEST_DIR");
-    
+
     let temp_dir = PathBuf::from(PROJECT_ROOT_DIR).join("temp");
 
     let f = File::open("samples/Mcd001.ps2").unwrap();
