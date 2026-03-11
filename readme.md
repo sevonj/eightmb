@@ -7,7 +7,7 @@
 
 </div>
 
-A work-in-progress tool for examining the contents of PlayStation 2 memory cards.
+A work-in-progress tool for examining PlayStation 2 memory card images.
 
 It can parse Sony's custom file system and dump the contents.
 
