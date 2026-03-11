@@ -18,7 +18,7 @@ pub struct Timestamp {
 impl Timestamp {
     pub fn read<R: Read>(reader: &mut R) -> Result<Self, MemcardError> {
         let mut timestamp = Self::default();
-        reader.read(&mut [0])?;
+        reader.read_exact(&mut [0])?;
         timestamp.sec = read_u8(reader)?;
         timestamp.min = read_u8(reader)?;
         timestamp.hour = read_u8(reader)?;

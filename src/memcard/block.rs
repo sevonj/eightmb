@@ -9,11 +9,9 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn read<R: Read>(
-        reader: &mut R,
-    ) -> Result<Self, MemcardError> {
+    pub fn read<R: Read>(reader: &mut R) -> Result<Self, MemcardError> {
         let mut pages = Vec::with_capacity(512);
-        for i in 0..512 {
+        for _ in 0..512 {
             pages.push(Page::read(reader)?);
         }
         Ok(Self { pages })

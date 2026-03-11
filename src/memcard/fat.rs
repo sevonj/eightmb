@@ -26,7 +26,7 @@ impl Fat {
         Self { indirect_table }
     }*/
 
-    pub fn new(superblock: &Superblock, pages: &Vec<Page>) -> Self {
+    pub fn new(superblock: &Superblock, pages: &[Page]) -> Self {
         let ind_fat_table = ind_fat_table(superblock, pages);
         let mut indirect_table = Vec::with_capacity(ind_fat_table.len());
 
@@ -44,7 +44,7 @@ impl Fat {
     pub fn fat_value(&self, cluster: usize) -> i32 {
         let tbl = cluster / 0xff;
         let off = cluster & 0xff;
-        return self.indirect_table[tbl][off];
+        self.indirect_table[tbl][off]
     }
 
     /// Gets the whole chain of fat values a starting given cluster
@@ -68,7 +68,7 @@ impl Fat {
     }
 }
 
-fn ind_fat_table(superblock: &Superblock, pages: &Vec<Page>) -> Vec<i32> {
+fn ind_fat_table(superblock: &Superblock, pages: &[Page]) -> Vec<i32> {
     let cluster = superblock.ind_fat_table[0] as usize;
     let pages_per_cluster = superblock.pages_per_cluster as usize;
     let page = cluster * pages_per_cluster;
@@ -87,7 +87,7 @@ fn ind_fat_table(superblock: &Superblock, pages: &Vec<Page>) -> Vec<i32> {
     table
 }
 
-fn fat_table(superblock: &Superblock, pages: &Vec<Page>, cluster: usize) -> Vec<i32> {
+fn fat_table(superblock: &Superblock, pages: &[Page], cluster: usize) -> Vec<i32> {
     let pages_per_cluster = superblock.pages_per_cluster as usize;
     let page = cluster * pages_per_cluster;
 

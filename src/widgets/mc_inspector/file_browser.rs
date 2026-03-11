@@ -1,10 +1,9 @@
 mod fat_entry_row;
-// mod folder_row;
+mod save_icon_view;
 
 mod imp {
-    use std::cell::OnceCell;
-
     use adw::NavigationPage;
+    use adw::prelude::NavigationPageExt;
     use adw::subclass::prelude::*;
     use eightmb::memcard::Directory;
     use eightmb::memcard::MemcardError;
@@ -13,6 +12,8 @@ mod imp {
     use gtk::glib;
 
     use eightmb::memcard::MemoryCard;
+
+    use crate::widgets::mc_inspector::file_browser::save_icon_view::SaveIconView;
 
     use super::fat_entry_row::FatEntryRow;
 
@@ -44,6 +45,7 @@ mod imp {
 
     impl ObjectImpl for FileBrowser {
         fn constructed(&self) {
+            self.content.set_child(Some(&SaveIconView::default()));
             self.parent_constructed();
         }
     }
@@ -83,7 +85,7 @@ mod imp {
 }
 
 use adw::subclass::prelude::*;
-use eightmb::memcard::MemoryCard;
+use eightmb::memcard::{MemcardError, MemoryCard};
 use gtk::glib;
 use gtk::glib::Object;
 
@@ -100,7 +102,7 @@ impl Default for FileBrowser {
 }
 
 impl FileBrowser {
-    pub fn refresh_fs(&self, memcard: &MemoryCard) {
-        self.imp().refresh_fs(memcard).unwrap();
+    pub fn refresh_fs(&self, memcard: &MemoryCard) -> Result<(), MemcardError> {
+        self.imp().refresh_fs(memcard)
     }
 }

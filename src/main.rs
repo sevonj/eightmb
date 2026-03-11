@@ -5,9 +5,7 @@ use std::io::BufReader;
 use std::path::Path;
 use std::path::PathBuf;
 
-use eightmb::memcard;
 use eightmb::memcard::Directory;
-use eightmb::memcard::Entry;
 use eightmb::memcard::MemoryCard;
 
 use gtk::gio::SimpleAction;
@@ -46,9 +44,9 @@ fn setup_accels(app: &adw::Application) {
     app.set_accels_for_action("win.eat-adaptive-preview", &["<ctrl><Shift>M"]);
 }
 
-const PROJECT_ROOT_DIR: &str = env!("CARGO_MANIFEST_DIR");
-
 fn main_old() {
+    const PROJECT_ROOT_DIR: &str = env!("CARGO_MANIFEST_DIR");
+    
     let temp_dir = PathBuf::from(PROJECT_ROOT_DIR).join("temp");
 
     let f = File::open("samples/Mcd001.ps2").unwrap();
@@ -108,7 +106,7 @@ fn dump_filesystem(memcard: &MemoryCard, dir: &Directory, out_dir: &Path) {
         let cluster = entry.cluster as usize;
 
         if entry.is_dir() {
-            let subdir = match memcard.read_directory(&entry) {
+            let subdir = match memcard.read_directory(entry) {
                 Ok(dir) => dir,
                 Err(e) => {
                     println!("'{entry_path:?}' - {e:?}");
@@ -138,7 +136,7 @@ fn print_fs_tree(memcard: &MemoryCard) {
             if entry.is_dir() {
                 let path = format!("{prefix}{}/", entry.name());
                 println!("{path}    {}", entry.cluster);
-                let subdir = memcard.read_directory(&entry).unwrap();
+                let subdir = memcard.read_directory(entry).unwrap();
                 print_inner(memcard, &subdir, &path);
             } else {
                 println!("{prefix}{}    {}", entry.name(), entry.cluster);

@@ -33,7 +33,6 @@ impl Directory {
         })
     }
 
-
     pub fn read_root<R: Read>(reader: &mut R) -> Result<Self, MemcardError> {
         let dot = Entry::read(reader)?;
         let dotdot = Entry::read(reader)?;

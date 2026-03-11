@@ -1,9 +1,14 @@
 use std::path::Path;
 
 use crate::memcard::Directory;
+use crate::memcard::MemcardError;
 use crate::memcard::MemoryCard;
 
-pub fn dump_filesystem(memcard: &MemoryCard, dir: &Directory, out_dir: &Path) {
+pub fn dump_filesystem(
+    memcard: &MemoryCard,
+    dir: &Directory,
+    out_dir: &Path,
+) -> Result<(), MemcardError> {
     for entry in &dir.entries {
         if entry.is_dir() && entry.is_file() {
             panic!("wtf, it's both a file and a dir");
@@ -17,15 +22,15 @@ pub fn dump_filesystem(memcard: &MemoryCard, dir: &Directory, out_dir: &Path) {
         let cluster = entry.cluster as usize;
 
         if entry.is_dir() {
-            let subdir = match memcard.read_directory(&entry) {
+            let subdir = match memcard.read_directory(entry) {
                 Ok(dir) => dir,
                 Err(e) => {
                     println!("'{entry_path:?}' - {e:?}");
                     continue;
                 }
             };
-            std::fs::create_dir_all(&entry_path).unwrap();
-            dump_filesystem(memcard, &subdir, &entry_path);
+            std::fs::create_dir_all(&entry_path)?;
+            dump_filesystem(memcard, &subdir, &entry_path)?;
         } else {
             let raw = match memcard.read_entry(cluster) {
                 Ok(raw) => raw,
@@ -34,7 +39,8 @@ pub fn dump_filesystem(memcard: &MemoryCard, dir: &Directory, out_dir: &Path) {
                     continue;
                 }
             };
-            std::fs::write(entry_path, &raw).unwrap();
+            std::fs::write(entry_path, &raw)?;
         }
     }
+    Ok(())
 }

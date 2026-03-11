@@ -3,12 +3,17 @@ mod imp {
     use std::cell::RefCell;
     use std::fs::File;
     use std::io::BufReader;
+    use std::path::Path;
+    use std::path::PathBuf;
 
     use adw::AboutDialog;
     use adw::ApplicationWindow;
+    use adw::Toast;
+    use adw::ToastOverlay;
     use adw::ToolbarView;
     use adw::prelude::*;
     use adw::subclass::prelude::*;
+    use eightmb::memcard::MemcardError;
     use eightmb::memcard::MemoryCard;
     use gtk::Builder;
     use gtk::CompositeTemplate;
@@ -21,6 +26,7 @@ mod imp {
     use gtk::glib;
     use gtk::glib::Properties;
     use gtk::glib::clone;
+    use gtk::glib::closure_local;
     use gtk::glib::property::PropertySet;
 
     use crate::widgets::mc_inspector::McInspector;
@@ -32,6 +38,8 @@ mod imp {
     pub struct Window {
         child: RefCell<Option<Widget>>,
 
+        #[template_child]
+        toast_overlay: TemplateChild<ToastOverlay>,
         #[template_child]
         main_toolbar_view: TemplateChild<ToolbarView>,
     }
@@ -76,6 +84,51 @@ mod imp {
     impl AdwApplicationWindowImpl for Window {}
 
     impl Window {
+        fn toast(&self, title: &str) {
+            self.toast_overlay.add_toast(Toast::new(title));
+        }
+
+        fn try_open_memcard(&self, path: &Path) {
+            if let Err(e) = self.open_memcard(path) {
+                self.toast(&e.to_string())
+            }
+        }
+
+        fn open_memcard(&self, path: &Path) -> Result<(), MemcardError> {
+            let obj = self.obj();
+            println!("opening: {path:?}");
+            let mut reader = BufReader::new(File::open(path)?);
+            let memcard = MemoryCard::read(&mut reader)?;
+            let insp = McInspector::new(memcard);
+            insp.connect_closure(
+                "toast",
+                true,
+                closure_local!(
+                    #[weak]
+                    obj,
+                    move |_: McInspector, msg: String| {
+                        obj.imp().toast(&msg);
+                    }
+                ),
+            );
+            self.set_content(Some(insp.upcast()));
+            Ok(())
+        }
+
+        fn try_dump_fs(&self, path: &Path) {
+            if let Some(insp) = self
+                .child
+                .borrow()
+                .as_ref()
+                .and_then(|c| c.downcast_ref::<McInspector>())
+            {
+                let path = path.join("memcard_dump");
+                if let Err(e) = insp.dump(&path) {
+                    self.toast(&e.to_string());
+                };
+            }
+        }
+
         fn setup_actions(&self) {
             let obj = self.obj();
 
@@ -92,13 +145,10 @@ mod imp {
                             #[weak]
                             obj,
                             move |result| {
-                                if let Ok(file) = result
-                                    && let Some(path) = file.path()
-                                {
-                                    let mut reader = BufReader::new(File::open(path).unwrap());
-                                    let memcard = MemoryCard::read(&mut reader).unwrap();
-                                    let insp = McInspector::new(memcard);
-                                    obj.imp().set_content(Some(insp.upcast()));
+                                if let Ok(Some(path)) = result.map(|f| f.path()) {
+                                    obj.imp().try_open_memcard(&path);
+                                } else {
+                                    obj.imp().toast("Couldn't get file path.");
                                 }
                             }
                         ),
@@ -120,14 +170,8 @@ mod imp {
                             #[weak]
                             obj,
                             move |result| {
-                                if let Ok(file) = result
-                                    && let Some(path) = file.path()
-                                {
-                                    let binding = obj.imp().child.borrow();
-                                    if let Some(insp) = binding.as_ref().and_then(|c| c.downcast_ref::<McInspector>()) {
-                                        let path = path.join("memcard_dump");
-                                        insp.dump(&path);
-                                    } 
+                                if let Ok(Some(path)) = result.map(|f| f.path()) {
+                                    obj.imp().try_dump_fs(&path);
                                 }
                             }
                         ),
@@ -142,7 +186,7 @@ mod imp {
                 obj,
                 move |_, _| {
                     let builder = Builder::from_resource("/eightmb/ui/about_dialog.ui");
-                    let dialog: AboutDialog = builder.object("dialog").unwrap();
+                    let dialog: AboutDialog = builder.object("dialog").expect("builder");
                     dialog.set_version("none");
                     dialog.present(Some(&obj));
                 }
@@ -161,11 +205,7 @@ mod imp {
                 false,
                 move |_: &DropTarget, value: &glib::Value, _: f64, _: f64| {
                     if let Ok(path) = value.get::<String>() {
-                        println!("opening: {path}");
-                        let mut reader = BufReader::new(File::open(path).unwrap());
-                        let memcard = MemoryCard::read(&mut reader).unwrap();
-                        let insp = McInspector::new(memcard);
-                        obj.imp().set_content(Some(insp.upcast()));
+                        obj.imp().try_open_memcard(&PathBuf::from(path));
                         return true;
                     }
                     false

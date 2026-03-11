@@ -2,9 +2,13 @@ mod file_browser;
 
 mod imp {
     use std::cell::OnceCell;
+    use std::sync::OnceLock;
 
-    use adw::{prelude::BinExt, subclass::prelude::*};
+    use adw::prelude::*;
+    use adw::subclass::prelude::*;
     use gtk::glib;
+    use gtk::glib::subclass::Signal;
+    use gtk::glib::types::StaticType;
 
     use eightmb::memcard::MemoryCard;
 
@@ -12,7 +16,7 @@ mod imp {
 
     #[derive(Default)]
     pub struct McInspector {
-        pub(super) memcard: OnceCell<MemoryCard>,
+        memcard: OnceCell<MemoryCard>,
     }
 
     #[glib::object_subclass]
@@ -23,6 +27,17 @@ mod imp {
     }
 
     impl ObjectImpl for McInspector {
+        fn signals() -> &'static [Signal] {
+            static SIGNALS: OnceLock<Vec<Signal>> = OnceLock::new();
+            SIGNALS.get_or_init(|| {
+                vec![
+                    Signal::builder("toast")
+                        .param_types([String::static_type()])
+                        .build(),
+                ]
+            })
+        }
+
         fn constructed(&self) {
             self.parent_constructed();
         }
@@ -32,13 +47,19 @@ mod imp {
     impl BinImpl for McInspector {}
 
     impl McInspector {
+        pub(super) fn memcard(&self) -> &MemoryCard {
+            self.memcard.get().expect("bound")
+        }
+
         pub(super) fn bind(&self, memcard: MemoryCard) {
             let obj = self.obj();
 
-            self.memcard.set(memcard).unwrap();
+            self.memcard.set(memcard).expect("bind once");
             let file_browser = FileBrowser::default();
             obj.set_child(Some(&file_browser));
-            file_browser.refresh_fs(self.memcard.get().unwrap());
+            if let Err(e) = file_browser.refresh_fs(self.memcard()) {
+                obj.emit_by_name::<()>("toast", &[&e.to_string()]);
+            };
         }
     }
 }
@@ -46,7 +67,7 @@ mod imp {
 use std::path::Path;
 
 use adw::subclass::prelude::ObjectSubclassIsExt;
-use eightmb::memcard::{self, MemoryCard};
+use eightmb::memcard::{self, MemcardError, MemoryCard};
 use gtk::glib;
 use gtk::glib::Object;
 
@@ -64,9 +85,9 @@ impl McInspector {
         obj
     }
 
-    pub fn dump(&self, path: &Path) {
-        let memcard = self.imp().memcard.get().unwrap();
-        let root = memcard.root_directory().unwrap();
-        memcard::util::dump_filesystem(memcard, &root, path);
+    pub fn dump(&self, path: &Path) -> Result<(), MemcardError> {
+        let memcard = self.imp().memcard();
+        let root = memcard.root_directory()?;
+        memcard::util::dump_filesystem(memcard, &root, path)
     }
 }
