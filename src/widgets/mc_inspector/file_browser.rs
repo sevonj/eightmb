@@ -1,9 +1,12 @@
 mod fat_entry_row;
-mod icon_sys_view;
 mod save_icon_view;
+mod save_view;
 
 mod imp {
+    use std::cell::OnceCell;
     use std::cell::RefCell;
+    use std::io::BufReader;
+    use std::sync::Arc;
     use std::sync::OnceLock;
 
     use adw::NavigationPage;
@@ -11,6 +14,8 @@ mod imp {
     use adw::prelude::*;
     use adw::subclass::prelude::*;
     use eightmb::memcard::Directory;
+    use eightmb::memcard::Entry;
+    use eightmb::memcard::IconSys;
     use eightmb::memcard::MemcardError;
     use gtk::CompositeTemplate;
     use gtk::ListBox;
@@ -20,13 +25,15 @@ mod imp {
     use eightmb::memcard::MemoryCard;
     use gtk::glib::clone;
     use gtk::glib::property::PropertySet;
-    use gtk::glib::subclass::Signal;
 
     use super::fat_entry_row::FatEntryRow;
+    use super::save_view::SaveView;
 
     #[derive(CompositeTemplate, Default)]
     #[template(resource = "/eightmb/ui/mc_inspector/file_browser.ui")]
     pub struct FileBrowser {
+        memcard: OnceCell<Arc<MemoryCard>>,
+
         #[template_child]
         sidebar: TemplateChild<NavigationPage>,
         #[template_child]
@@ -53,32 +60,13 @@ mod imp {
     }
 
     impl ObjectImpl for FileBrowser {
-        fn signals() -> &'static [Signal] {
-            static SIGNALS: OnceLock<Vec<Signal>> = OnceLock::new();
-            SIGNALS.get_or_init(|| {
-                vec![
-                    // Param: Entry cluster index
-                    Signal::builder("entry-selected")
-                        .param_types([u32::static_type()])
-                        .build(),
-                ]
-            })
-        }
-
         fn constructed(&self) {
             let obj = self.obj();
 
             self.listbox.connect_row_selected(clone!(
                 #[weak]
                 obj,
-                move |_listbox, row| {
-                    obj.imp().set_preview_widget(None);
-                    let Some(row) = row.map(|row| row.downcast_ref::<FatEntryRow>().expect("cast"))
-                    else {
-                        return;
-                    };
-                    obj.emit_by_name("entry-selected", &[&row.entry().cluster])
-                }
+                move |_, _| obj.imp().on_row_selected()
             ));
 
             self.parent_constructed();
@@ -89,7 +77,13 @@ mod imp {
     impl BinImpl for FileBrowser {}
 
     impl FileBrowser {
-        pub(super) fn refresh_fs(&self, memcard: &MemoryCard) -> Result<(), MemcardError> {
+        pub(super) fn memcard(&self) -> &Arc<MemoryCard> {
+            self.memcard.get().expect("bound")
+        }
+
+        pub(super) fn refresh_fs(&self) -> Result<(), MemcardError> {
+            let memcard = self.memcard();
+
             self.listbox.remove_all();
             let root = memcard.root_directory()?;
 
@@ -121,18 +115,75 @@ mod imp {
             self.content.set_child(widget.as_ref());
             self.preview_widget.set(widget);
         }
+
+        fn on_row_selected(&self) {
+            self.set_preview_widget(None);
+
+            let Some(row) = self
+                .listbox
+                .selected_row()
+                .map(|row| row.downcast::<FatEntryRow>().expect("cast"))
+            else {
+                return;
+            };
+
+            let entry = row.entry();
+
+            if entry.is_dir() && !entry.is_psx_save() && !entry.is_pocketstn_save() {
+                if let Err(e) = self.preview_save_dir(entry) {
+                    println!("{e}");
+                }
+            }
+        }
+
+        fn preview_save_dir(&self, dir_entry: &Entry) -> Result<(), MemcardError> {
+            let memcard = self.memcard();
+            let dir = memcard.read_directory(&dir_entry)?;
+            println!("{}", dir.dot.name());
+            println!("{}", dir.dot.created);
+            println!("{}", dir.dot.modified);
+            println!("{}", dir.dotdot.name());
+            println!("{}", dir.dotdot.created);
+            println!("{}", dir.dotdot.modified);
+            for entry in &dir.entries {
+                println!("{}", entry.name());
+                println!("{}", entry.created);
+                println!("{}", entry.modified);
+            }
+
+            let Some(iconsys_entry) = dir.entry_by_name("icon.sys") else {
+                return Ok(());
+            };
+
+            let Ok(iconsys) = memcard
+                .read_entry(iconsys_entry.cluster as usize)
+                .and_then(|raw| IconSys::read(&mut BufReader::new(raw.as_slice())))
+            else {
+                return Ok(());
+            };
+
+            self.set_preview_widget(Some(SaveView::new(dir, iconsys).upcast()));
+
+            Ok(())
+        }
+
+        pub(super) fn bind(&self, memcard: Arc<MemoryCard>) {
+            self.memcard.set(memcard).expect("bind once");
+        }
     }
 }
 
 use std::io::BufReader;
+use std::sync::Arc;
 
 use adw::subclass::prelude::*;
-use eightmb::memcard::{IconSys, MemcardError, MemoryCard};
+use eightmb::memcard::MemcardError;
+use eightmb::memcard::MemoryCard;
 use gtk::glib;
 use gtk::glib::Object;
 use gtk::glib::object::Cast;
 
-use crate::widgets::mc_inspector::file_browser::icon_sys_view::IconSysView;
+use save_view::SaveView;
 
 glib::wrapper! {
     pub struct FileBrowser(ObjectSubclass<imp::FileBrowser>)
@@ -140,23 +191,14 @@ glib::wrapper! {
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
 }
 
-impl Default for FileBrowser {
-    fn default() -> Self {
-        Object::builder().build()
-    }
-}
-
 impl FileBrowser {
-    pub fn refresh_fs(&self, memcard: &MemoryCard) -> Result<(), MemcardError> {
-        self.imp().refresh_fs(memcard)
+    pub fn new(memcard: Arc<MemoryCard>) -> Self {
+        let obj: Self = Object::builder().build();
+        obj.imp().bind(memcard);
+        obj
     }
 
-    pub fn preview_file(&self, raw: &[u8]) {
-        let Ok(iconsys) = IconSys::read(&mut BufReader::new(raw)) else {
-            return;
-        };
-
-        self.imp()
-            .set_preview_widget(Some(IconSysView::new(iconsys).upcast()));
+    pub fn refresh_fs(&self) -> Result<(), MemcardError> {
+        self.imp().refresh_fs()
     }
 }

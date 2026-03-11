@@ -1,4 +1,5 @@
-use std::io::{BufReader, Read};
+use std::io::BufReader;
+use std::io::Read;
 
 use crate::memcard::MemcardError;
 use crate::memcard::MemoryCard;

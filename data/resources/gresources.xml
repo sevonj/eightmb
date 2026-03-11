@@ -4,7 +4,7 @@
   <gresource prefix="/eightmb">
     <file preprocess="xml-stripblanks" compressed="true">ui/mc_inspector/fat_entry_row.ui</file>
     <file preprocess="xml-stripblanks" compressed="true">ui/mc_inspector/file_browser.ui</file>
-    <file preprocess="xml-stripblanks" compressed="true">ui/mc_inspector/icon_sys_view.ui</file>
+    <file preprocess="xml-stripblanks" compressed="true">ui/mc_inspector/save_view.ui</file>
     <file preprocess="xml-stripblanks" compressed="true">ui/about_dialog.ui</file>
     <file preprocess="xml-stripblanks" compressed="true">ui/no_card_status_page.ui</file>
     <file preprocess="xml-stripblanks" compressed="true">ui/window.ui</file>

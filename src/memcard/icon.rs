@@ -23,15 +23,13 @@ impl Vec4 {
     }
 }
 
-/// PlayStation 2 save info file
-/// Color value range: 0x00..=0xff
+/// PlayStation 2 save icon
 #[derive(Debug, Clone)]
 #[repr(C)]
-pub struct IconSys {
+pub struct Icon {
     pub magic: [u8; 4],
-    pub unk_0x04: u16,
-    /// Title is split into two rows at this offset
-    pub subtitle_off: u16,
+    pub unk_0x04: [u8; 2],
+    pub unk_0x06: [u8; 2],
     pub unk_0x08: u32,
     pub bg_opacity: u32,
     /// Top left RGB_
@@ -63,17 +61,11 @@ pub struct IconSys {
     pub delete_icon: [u8; 64],
 }
 
-impl IconSys {
+impl Icon {
     pub const MAGIC: &[u8; 4] = b"PS2D";
 
     pub fn title(&self) -> String {
-        let subtitle_off = self.subtitle_off as usize;
-        shiftjis_to_string(&self.title[..subtitle_off]).unwrap()
-    }
-
-    pub fn subtitle(&self) -> String {
-        let subtitle_off = self.subtitle_off as usize;
-        shiftjis_to_string(&self.title[subtitle_off..]).unwrap()
+        shiftjis_to_string(self.title.as_slice()).unwrap()
     }
 
     pub fn list_icon(&self) -> String {
@@ -97,8 +89,10 @@ impl IconSys {
     pub fn read<R: Read>(reader: &mut R) -> Result<Self, MemcardError> {
         let mut magic = [0; 4];
         reader.read_exact(&mut magic)?;
-        let unk_0x04 = read_u16(reader)?;
-        let unk_0x06 = read_u16(reader)?;
+        let mut unk_0x04 = [0; 2];
+        reader.read_exact(&mut unk_0x04)?;
+        let mut unk_0x06 = [0; 2];
+        reader.read_exact(&mut unk_0x06)?;
         let unk_0x08 = read_u32(reader)?;
         let bg_opacity = read_u32(reader)?;
         let bg_color_a = Vec4::read(reader)?;
@@ -121,10 +115,10 @@ impl IconSys {
         let mut icon_delete = [0; 64];
         reader.read_exact(&mut icon_delete)?;
 
-        let iconsys = Self {
+        let Icon = Self {
             magic,
             unk_0x04,
-            subtitle_off: unk_0x06,
+            unk_0x06,
             unk_0x08,
             bg_opacity,
             bg_color_a,
@@ -144,12 +138,28 @@ impl IconSys {
             delete_icon: icon_delete,
         };
 
-        iconsys.validate()?;
+        Icon.validate()?;
 
-        Ok(iconsys)
+        Ok(Icon)
     }
 
     pub fn validate(&self) -> Result<(), MemcardError> {
+        if &self.magic != Self::MAGIC {
+            return Err(MemcardError::InvalidMagic);
+        }
+
+        validate_shiftjis(self.title.as_slice())?;
+
+        validate_filename(self.list_icon.as_slice())?;
+
+        if self.copy_icon[0] != 0 {
+            validate_filename(self.copy_icon.as_slice())?;
+        }
+
+        if self.delete_icon[0] != 0 {
+            validate_filename(self.delete_icon.as_slice())?;
+        }
+
         Ok(())
     }
 }

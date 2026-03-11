@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::io::Read;
 
 use crate::memcard::MemcardError;
@@ -5,7 +6,7 @@ use crate::util::*;
 
 /// Serialized bytes: _smhDMYY
 /// Always japanese time zone
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd)]
 pub struct Timestamp {
     pub sec: u8,
     pub min: u8,
@@ -40,6 +41,32 @@ impl std::fmt::Display for Timestamp {
 
         // RFC 3339-ish representation
         write!(f, "{year:04}-{mon:02}-{day:02} {hour:02}:{min:02}:{sec:02}")
+    }
+}
+
+impl Ord for Timestamp {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.year.cmp(&other.year) {
+            Ordering::Equal => (),
+            ord => return ord,
+        }
+        match self.mon.cmp(&other.mon) {
+            Ordering::Equal => (),
+            ord => return ord,
+        }
+        match self.day.cmp(&other.day) {
+            Ordering::Equal => (),
+            ord => return ord,
+        }
+        match self.hour.cmp(&other.hour) {
+            Ordering::Equal => (),
+            ord => return ord,
+        }
+        match self.min.cmp(&other.min) {
+            Ordering::Equal => (),
+            ord => return ord,
+        }
+        self.sec.cmp(&other.sec)
     }
 }
 

@@ -2,13 +2,15 @@ mod directory;
 mod entry;
 mod error;
 mod fat;
+mod icon;
 mod icon_sys;
 mod page;
 mod superblock;
 mod timestamp;
 pub mod util;
 
-use std::io::{BufReader, Read};
+use std::io::BufReader;
+use std::io::Read;
 
 pub use directory::Directory;
 pub use entry::Entry;

@@ -17,6 +17,7 @@ pub enum MemcardError {
     FilenameIsEmpty,
     FilenameIsntNullterminated,
     StringDecodeFailed,
+    IconSysBadSubtitleOffset,
 }
 
 impl From<std::io::Error> for MemcardError {
@@ -60,6 +61,7 @@ impl std::fmt::Display for MemcardError {
             FilenameIsEmpty => write!(f, "Filename is empty."),
             FilenameIsntNullterminated => write!(f, "Filename isn't null-terminated."),
             StringDecodeFailed => write!(f, "Couldn't decode string."),
+            IconSysBadSubtitleOffset => write!(f, "icon.sys subtitle offset is bad."),
         }
     }
 }
