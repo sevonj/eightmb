@@ -119,7 +119,7 @@ mod imp {
 
             let index_count = self.save_icon.get().expect("bound").num_vertices as i32;
             unsafe {
-                gl::ClearColor(0.2, 0.3, 0.4, 1.0);
+                gl::ClearColor(0.0, 0.0, 0.0, 0.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT);
 
                 let program = *self.program.get().expect("bound");
