@@ -21,7 +21,7 @@ impl Directory {
             ".." => return Some(&self.dotdot),
             _ => {
                 for entry in &self.entries {
-                    if filename == &entry.name() {
+                    if filename == entry.name() {
                         return Some(entry);
                     }
                 }

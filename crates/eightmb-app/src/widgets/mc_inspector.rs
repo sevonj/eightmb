@@ -9,7 +9,6 @@ mod imp {
     use adw::prelude::*;
     use adw::subclass::prelude::*;
     use gtk::glib;
-    use gtk::glib::closure_local;
     use gtk::glib::property::PropertySet;
     use gtk::glib::subclass::Signal;
     use gtk::glib::types::StaticType;

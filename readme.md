@@ -14,7 +14,7 @@ It can parse Sony's custom file system, kind-of show the 3D save icons, and dump
 Who knew that a GTK app isn't the best way to learn OpenGL 
 
 <div align="center">
-<img alt="image" src="data/screenshots/screenshot.png" />
+<img alt="image" src="crates/eightmb-app/data/screenshots/screenshot.png" />
 </div>
 
 GPL-3.0-or-later

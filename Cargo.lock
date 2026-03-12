@@ -110,6 +110,14 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "encoding_rs",
+ "serde",
+]
+
+[[package]]
+name = "eightmb-app"
+version = "0.1.0"
+dependencies = [
+ "eightmb",
  "epoxy",
  "gettext-rs",
  "gl",
@@ -117,7 +125,6 @@ dependencies = [
  "gtk4",
  "libadwaita",
  "libloading",
- "serde",
 ]
 
 [[package]]

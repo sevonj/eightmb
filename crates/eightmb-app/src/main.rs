@@ -134,6 +134,11 @@ fn dump_filesystem(memcard: &MemoryCard, dir: &Directory, out_dir: &Path) {
 fn print_fs_tree(memcard: &MemoryCard) {
     let root = memcard.root_directory().unwrap();
 
+    fn read_iconsys(memcard: &MemoryCard, entry: &Entry) -> Result<IconSys, MemcardError> {
+        let raw = memcard.read_entry(entry.cluster as usize)?;
+        IconSys::read(&mut BufReader::new(raw.as_slice()))
+    }
+
     fn print_inner(memcard: &MemoryCard, dir: &Directory, prefix: &str) {
         for entry in &dir.entries {
             if entry.is_dir() {
@@ -166,9 +171,4 @@ fn print_fs_tree(memcard: &MemoryCard) {
 
     println!("/");
     print_inner(memcard, &root, "/");
-}
-
-fn read_iconsys(memcard: &MemoryCard, entry: &Entry) -> Result<IconSys, MemcardError> {
-    let raw = memcard.read_entry(entry.cluster as usize)?;
-    IconSys::read(&mut BufReader::new(raw.as_slice()))
 }

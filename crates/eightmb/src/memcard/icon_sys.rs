@@ -150,6 +150,28 @@ impl IconSys {
     }
 
     pub fn validate(&self) -> Result<(), MemcardError> {
+        if &self.magic != Self::MAGIC {
+            return Err(MemcardError::InvalidMagic);
+        }
+
+        let subtitle_off = self.subtitle_off as usize;
+        if subtitle_off > self.title.len() {
+            return Err(MemcardError::IconSysBadSubtitleOffset);
+        }
+        validate_shiftjis(self.title.as_slice())?;
+        validate_shiftjis(&self.title[..subtitle_off])?;
+        validate_shiftjis(&self.title[subtitle_off..])?;
+
+        validate_filename(self.list_icon.as_slice())?;
+
+        if self.copy_icon[0] != 0 {
+            validate_filename(self.copy_icon.as_slice())?;
+        }
+
+        if self.delete_icon[0] != 0 {
+            validate_filename(self.delete_icon.as_slice())?;
+        }
+
         Ok(())
     }
 }

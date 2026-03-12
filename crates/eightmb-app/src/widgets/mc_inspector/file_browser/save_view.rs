@@ -5,7 +5,6 @@ mod imp {
     use adw::prelude::BinExt;
     use adw::subclass::prelude::*;
     use eightmb::memcard::Directory;
-    use eightmb::memcard::Entry;
     use eightmb::memcard::IconSys;
     use eightmb::memcard::SaveIcon;
     use gtk::CompositeTemplate;
@@ -64,10 +63,20 @@ mod imp {
     impl BinImpl for SaveView {}
 
     impl SaveView {
-        pub(super) fn bind(&self, dir: Directory, iconsys: IconSys, list_icon: Option<SaveIcon>) {
+        pub(super) fn bind(
+            &self,
+            dir: Directory,
+            iconsys: IconSys,
+            list_icon: Option<SaveIcon>,
+            copy_icon: Option<SaveIcon>,
+            delete_icon: Option<SaveIcon>,
+        ) {
             self.dir.set(dir).expect("bind once");
             self.iconsys.set(iconsys).expect("bind once");
             self.list_icon.set(list_icon).expect("bind once");
+            self.copy_icon.set(copy_icon).expect("bind once");
+            self.delete_icon.set(delete_icon).expect("bind once");
+
             let dir = self.dir.get().expect("bound");
             let iconsys = self.iconsys.get().expect("bound");
 
@@ -87,7 +96,6 @@ mod imp {
 
 use adw::subclass::prelude::*;
 use eightmb::memcard::Directory;
-use eightmb::memcard::Entry;
 use eightmb::memcard::IconSys;
 use eightmb::memcard::SaveIcon;
 use gtk::glib;
@@ -100,10 +108,16 @@ pub struct SaveView(ObjectSubclass<imp::SaveView>)
 }
 
 impl SaveView {
-    pub fn new(dir: Directory, iconsys: IconSys, list_icon: Option<SaveIcon>) -> Self {
+    pub fn new(
+        dir: Directory,
+        iconsys: IconSys,
+        list_icon: Option<SaveIcon>,
+        copy_icon: Option<SaveIcon>,
+        delete_icon: Option<SaveIcon>,
+    ) -> Self {
         let obj: Self = Object::builder().build();
         let imp = obj.imp();
-        imp.bind(dir, iconsys, list_icon);
+        imp.bind(dir, iconsys, list_icon, copy_icon, delete_icon);
         obj
     }
 }

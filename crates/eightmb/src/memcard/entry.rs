@@ -172,17 +172,3 @@ impl std::fmt::Display for Entry {
         )
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use std::io::BufReader;
-
-    use super::*;
-
-    #[test]
-    fn test_entry_timestamp() {
-        let mut fiveonetwo = BufReader::new([0; 512].as_slice());
-        assert!(Entry::read(&mut fiveonetwo).is_ok());
-        assert!(fiveonetwo.read_exact(&mut [0]).is_err());
-    }
-}

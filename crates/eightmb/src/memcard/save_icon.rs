@@ -1,10 +1,12 @@
+use std::fs::File;
 use std::io::Read;
+use std::io::Write;
+use std::path::PathBuf;
 
 use bytemuck::Pod;
 use bytemuck::Zeroable;
 
 use crate::memcard::MemcardError;
-use crate::memcard::save_icon;
 use crate::util::*;
 
 #[derive(Debug, Default, Clone, Copy, Zeroable, Pod)]
@@ -88,10 +90,36 @@ impl SaveIcon {
             return Err(MemcardError::InvalidMagic);
         }
 
-        if self.num_vertices % 3 != 0 {
+        if !self.num_vertices.is_multiple_of(3) {
             return Err(MemcardError::SaveIconInvalidVertexCount);
         }
 
         Ok(())
+    }
+
+    pub fn debug_dump_wavefront(&self, filename: &str) {
+        let workspace_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let temp_dir = workspace_root.join("temp");
+        let out_path = temp_dir.join(filename).with_added_extension("obj");
+
+        let mut wavefront = String::new();
+
+        wavefront += "# ";
+        wavefront += filename;
+
+        for v in &self.vertices {
+            let x = v.coords[0].x as f32 / 0x1000 as f32;
+            let y = v.coords[0].y as f32 / 0x1000 as f32;
+            let z = v.coords[0].z as f32 / 0x1000 as f32;
+            wavefront += &format!("\nv {} {} {}", x, y, z)
+        }
+
+        for i in 0..(self.vertices.len() / 3) {
+            let o = i * 3;
+            wavefront += &format!("\nf {} {} {}", o + 1, o + 2, o + 3);
+        }
+
+        let mut f = File::create(out_path).unwrap();
+        f.write_all(wavefront.as_bytes()).unwrap();
     }
 }

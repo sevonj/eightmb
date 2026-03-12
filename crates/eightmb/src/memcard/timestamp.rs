@@ -6,7 +6,7 @@ use crate::util::*;
 
 /// Serialized bytes: _smhDMYY
 /// Always japanese time zone
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Timestamp {
     pub sec: u8,
     pub min: u8,
@@ -41,6 +41,12 @@ impl std::fmt::Display for Timestamp {
 
         // RFC 3339-ish representation
         write!(f, "{year:04}-{mon:02}-{day:02} {hour:02}:{min:02}:{sec:02}")
+    }
+}
+
+impl PartialOrd for Timestamp {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
