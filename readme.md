@@ -1,7 +1,7 @@
 
 <div align="center">
 
-<img height='128' alt='app icon' src='data/resources/icons/hicolor/scalable/apps/com.github.sevonj.eightmb.png'>
+<img height='128' alt='app icon' src='crates/eightmb-app/data/resources/icons/hicolor/scalable/apps/com.github.sevonj.eightmb.png'>
 
 # EightMB
 
