@@ -18,6 +18,7 @@ pub enum MemcardError {
     FilenameIsntNullterminated,
     StringDecodeFailed,
     IconSysBadSubtitleOffset,
+    SaveIconInvalidVertexCount,
 }
 
 impl From<std::io::Error> for MemcardError {
@@ -62,6 +63,9 @@ impl std::fmt::Display for MemcardError {
             FilenameIsntNullterminated => write!(f, "Filename isn't null-terminated."),
             StringDecodeFailed => write!(f, "Couldn't decode string."),
             IconSysBadSubtitleOffset => write!(f, "icon.sys subtitle offset is bad."),
+            SaveIconInvalidVertexCount => {
+                write!(f, "Save icon vertex count isn't a multiple of 3.")
+            }
         }
     }
 }

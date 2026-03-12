@@ -4,6 +4,7 @@ mod imp {
     use std::ptr;
 
     use adw::subclass::prelude::*;
+    use eightmb::memcard::SaveIcon;
     use gtk::GLArea;
     use gtk::gdk::GLContext;
     use gtk::glib;
@@ -11,10 +12,12 @@ mod imp {
     use gtk::prelude::GLAreaExt;
     use libloading::os::unix::Library;
 
-    const SHITTY_TRIANGLE: [f32; 9] = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
+    // const SHITTY_TRIANGLE: [f32; 9] = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
+    // const SHITTIER_TRIANGLE: [f32; 9] = [0.5, 0.5, 0.0, -0.5, 0.5, 0.0, 0.0, -0.5, 0.0];
 
     #[derive(Default)]
     pub struct SaveIconView {
+        save_icon: OnceCell<SaveIcon>,
         program: OnceCell<u32>,
     }
 
@@ -41,6 +44,16 @@ mod imp {
                 return;
             }
 
+            let save_icon = self.save_icon.get().unwrap();
+
+            let mut vertices: Vec<f32> = Vec::with_capacity(save_icon.vertices.len());
+
+            for v in &save_icon.vertices {
+                vertices.push(v.coords[0].x as f32 / 0x1000 as f32 * 0.3);
+                vertices.push(-v.coords[0].y as f32 / 0x1000 as f32 * 0.3);
+                vertices.push(v.coords[0].z as f32 / 0x1000 as f32 * 0.3);
+            }
+
             let libepoxy =
                 unsafe { Library::new("libepoxy.so.0") }.expect("Couldn't to get 'libepoxy.so.0'");
             epoxy::load_with(
@@ -58,8 +71,6 @@ mod imp {
                 let frag_shad = compile_shader(FRAG_SOURCE, gl::FRAGMENT_SHADER);
                 let program = link_program(vert_shad, frag_shad);
                 self.program.set(program).expect("bind once");
-
-                let vertices = SHITTY_TRIANGLE;
 
                 let mut vao = 0;
                 let mut vbo = 0;
@@ -106,6 +117,7 @@ mod imp {
 
             obj.make_current();
 
+            let index_count = self.save_icon.get().expect("bound").num_vertices as i32;
             unsafe {
                 gl::ClearColor(0.2, 0.3, 0.4, 1.0);
                 gl::Clear(gl::COLOR_BUFFER_BIT);
@@ -113,10 +125,16 @@ mod imp {
                 let program = *self.program.get().expect("bound");
 
                 gl::UseProgram(program);
-                gl::DrawArrays(gl::TRIANGLES, 0, 3);
+                gl::DrawArrays(gl::TRIANGLES, 0, index_count);
             }
 
             Propagation::Stop
+        }
+    }
+
+    impl SaveIconView {
+        pub(super) fn bind(&self, save_icon: SaveIcon) {
+            self.save_icon.set(save_icon).expect("bind once");
         }
     }
 
@@ -168,6 +186,8 @@ mod imp {
     }
 }
 
+use adw::subclass::prelude::ObjectSubclassIsExt;
+use eightmb::memcard::SaveIcon;
 use gtk::glib;
 use gtk::glib::Object;
 
@@ -177,8 +197,10 @@ glib::wrapper! {
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
 }
 
-impl Default for SaveIconView {
-    fn default() -> Self {
-        Object::builder().build()
+impl SaveIconView {
+    pub fn new(save_icon: SaveIcon) -> Self {
+        let obj: Self = Object::builder().build();
+        obj.imp().bind(save_icon);
+        obj
     }
 }

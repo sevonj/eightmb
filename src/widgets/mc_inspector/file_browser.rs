@@ -5,7 +5,10 @@ mod save_view;
 mod imp {
     use std::cell::OnceCell;
     use std::cell::RefCell;
+    use std::fs::File;
     use std::io::BufReader;
+    use std::io::Write;
+    use std::path::PathBuf;
     use std::sync::Arc;
     use std::sync::OnceLock;
 
@@ -17,6 +20,7 @@ mod imp {
     use eightmb::memcard::Entry;
     use eightmb::memcard::IconSys;
     use eightmb::memcard::MemcardError;
+    use eightmb::memcard::SaveIcon;
     use gtk::CompositeTemplate;
     use gtk::ListBox;
     use gtk::Widget;
@@ -162,7 +166,48 @@ mod imp {
                 return Ok(());
             };
 
-            self.set_preview_widget(Some(SaveView::new(dir, iconsys).upcast()));
+            let list_icon_name = iconsys.list_icon();
+            let list_icon = dir.entry_by_name(&list_icon_name).and_then(|e| {
+                memcard
+                    .read_entry(e.cluster as usize)
+                    .and_then(|raw| SaveIcon::read(&mut BufReader::new(raw.as_slice())))
+                    .ok()
+            });
+
+            match list_icon {
+                Some(_) => println!("list icon success"),
+                None => println!("list icon fail"),
+            }
+
+            if let Some(icon) = &list_icon
+                && false
+            {
+                const PROJECT_ROOT_DIR: &str = env!("CARGO_MANIFEST_DIR");
+                let temp_dir = PathBuf::from(PROJECT_ROOT_DIR).join("temp");
+                let out_path = temp_dir.join(&list_icon_name).with_added_extension("obj");
+
+                let mut wavefront = String::new();
+
+                wavefront += "# ";
+                wavefront += &list_icon_name;
+
+                for v in &icon.vertices {
+                    let x = v.coords[0].x as f32 / 0x1000 as f32;
+                    let y = v.coords[0].y as f32 / 0x1000 as f32;
+                    let z = v.coords[0].z as f32 / 0x1000 as f32;
+                    wavefront += &format!("\nv {} {} {}", x, y, z)
+                }
+
+                for i in 0..(icon.vertices.len() / 3) {
+                    let o = i * 3;
+                    wavefront += &format!("\nf {} {} {}", o + 1, o + 2, o + 3);
+                }
+
+                let mut f = File::create(out_path).unwrap();
+                f.write_all(wavefront.as_bytes()).unwrap();
+            }
+
+            self.set_preview_widget(Some(SaveView::new(dir, iconsys, list_icon).upcast()));
 
             Ok(())
         }

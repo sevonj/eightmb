@@ -2,9 +2,9 @@ mod directory;
 mod entry;
 mod error;
 mod fat;
-mod icon;
 mod icon_sys;
 mod page;
+mod save_icon;
 mod superblock;
 mod timestamp;
 pub mod util;
@@ -18,6 +18,7 @@ pub use error::MemcardError;
 pub use fat::Fat;
 pub use icon_sys::IconSys;
 pub use page::Page;
+pub use save_icon::SaveIcon;
 pub use superblock::Superblock;
 pub use timestamp::Timestamp;
 

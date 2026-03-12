@@ -22,6 +22,12 @@ pub fn read_u32<R: Read>(reader: &mut R) -> Result<u32, std::io::Error> {
     Ok(u32::from_le_bytes(buf))
 }
 
+pub fn read_i16<R: Read>(reader: &mut R) -> Result<i16, std::io::Error> {
+    let mut buf = [0_u8; 2];
+    reader.read_exact(&mut buf)?;
+    Ok(i16::from_le_bytes(buf))
+}
+
 pub fn validate_filename(slice: &[u8]) -> Result<(), MemcardError> {
     const ALLOWED_RANGE: std::ops::RangeInclusive<u8> = 0x20..=0x7e;
     const ILLEGAL_CHARS: [u8; 3] = [b'*', b'/', b'?'];
