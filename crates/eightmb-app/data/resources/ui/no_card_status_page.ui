@@ -7,8 +7,8 @@
         <property name="width-request">500</property>
         <child>
             <object class="AdwStatusPage">
-                <property name="title" translatable="yes">Nothing Open</property>
-                <property name="description" translatable="yes">Open a memory card</property>
+                <property name="title" translatable="yes">No Data</property>
+                <property name="description" translatable="yes">Drop a memory card image here</property>
                 <style>
                     <class name="compact" />
                 </style>
