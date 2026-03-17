@@ -42,7 +42,7 @@ impl Fat {
 
     /// Fat table value for a cluster index
     pub fn fat_value(&self, cluster: usize) -> i32 {
-        let tbl = cluster / 0xff;
+        let tbl = cluster / 0x100;
         let off = cluster & 0xff;
         self.indirect_table[tbl][off]
     }
