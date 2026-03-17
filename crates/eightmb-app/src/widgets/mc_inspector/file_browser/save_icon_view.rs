@@ -50,7 +50,7 @@ mod imp {
 
             for v in &save_icon.vertices {
                 vertices.push(v.coords[0].x as f32 / 0x1000 as f32 * 0.3);
-                vertices.push(-v.coords[0].y as f32 / 0x1000 as f32 * 0.3);
+                vertices.push(-v.coords[0].y as f32 / 0x1000 as f32 * 0.3 - 0.5);
                 vertices.push(v.coords[0].z as f32 / 0x1000 as f32 * 0.3);
             }
 
