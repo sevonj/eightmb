@@ -11,7 +11,22 @@ A work-in-progress tool for examining PlayStation 2 memory card images.
 
 It can parse Sony's custom file system, kind-of show the 3D save icons, and dump the card contents.
 
-Who knew that a GTK app isn't the best way to learn OpenGL 
+Who knew that a GTK app isn't the best way to learn OpenGL
+
+Cards are currently read-only. Editing is planned, eventually.
+
+Basic features:
+- [x] Read the file system
+- [ ] ECC
+- [ ] Bad blocks
+- [ ] Add files
+- [ ] Delete files
+- [x] icon.sys parse
+- [x] Display icon.sys Show background gradients
+- [x] Display save icon meshes
+- [ ] Display save icon textures
+- [ ] Display save icon lighting
+- [ ] Display save icon animation
 
 <div align="center">
 <img alt="image" src="crates/eightmb-app/data/screenshots/screenshot.png" />
