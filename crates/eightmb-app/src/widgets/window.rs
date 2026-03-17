@@ -11,14 +11,18 @@ mod imp {
     use adw::Toast;
     use adw::ToastOverlay;
     use adw::ToolbarView;
+    use adw::lerp;
     use adw::prelude::*;
     use adw::subclass::prelude::*;
     use eightmb::memcard::MemcardError;
     use eightmb::memcard::MemoryCard;
     use gtk::Builder;
     use gtk::CompositeTemplate;
+    use gtk::CssProvider;
     use gtk::DropTarget;
     use gtk::FileDialog;
+    #[allow(deprecated)]
+    use gtk::StyleContext;
     use gtk::Widget;
     use gtk::gdk::DragAction;
     use gtk::gio::Cancellable;
@@ -37,6 +41,7 @@ mod imp {
     #[template(resource = "/eightmb/ui/window.ui")]
     pub struct Window {
         child: RefCell<Option<Widget>>,
+        css_provider: CssProvider,
 
         #[template_child]
         toast_overlay: TemplateChild<ToastOverlay>,
@@ -69,12 +74,21 @@ mod imp {
                 obj.add_css_class("devel");
             }
 
+            #[allow(deprecated)]
+            StyleContext::add_provider_for_display(
+                &RootExt::display(obj.as_ref()),
+                &self.css_provider,
+                999,
+            );
+
             self.setup_actions();
             self.setup_file_drop();
 
             self.set_content(Some(NoCardStatusPage::default().upcast()));
 
             self.parent_constructed();
+
+            self.set_bg_black();
         }
     }
 
@@ -111,7 +125,31 @@ mod imp {
                     }
                 ),
             );
+
+            insp.connect_closure(
+                "set-bg",
+                true,
+                closure_local!(
+                    #[weak]
+                    obj,
+                    move |_: McInspector, a: u32, b: u32, c: u32, d: u32| {
+                        obj.imp().set_bg_icon(a, b, c, d);
+                    }
+                ),
+            );
+
+            insp.connect_closure(
+                "clear-bg",
+                true,
+                closure_local!(
+                    #[weak]
+                    obj,
+                    move |_: McInspector| { obj.imp().set_bg_browser() }
+                ),
+            );
+
             self.set_content(Some(insp.upcast()));
+            self.set_bg_browser();
             Ok(())
         }
 
@@ -223,6 +261,77 @@ mod imp {
                 self.main_toolbar_view.set_content(Some(&new));
                 self.child.set(Some(new));
             }
+        }
+
+        fn set_bg_black(&self) {
+            let bk = "#000";
+            self.set_bg(bk, bk, bk, bk);
+        }
+
+        fn set_bg_browser(&self) {
+            let a = "#ACACAC";
+            let b = "#0000";
+            let c = "#0000";
+            let d = "#2A2A20";
+            self.set_bg(a, b, c, d);
+        }
+
+        fn set_bg_icon(&self, a: u32, b: u32, c: u32, d: u32) {
+            const BROWSER_A: u32 = 0xACACAC00;
+            const BROWSER_B: u32 = 0x7A7A7A00;
+            const BROWSER_C: u32 = 0x7A7A7A00;
+            const BROWSER_D: u32 = 0x2A2A2000;
+
+            fn mix_color(bg: u32, overlay: u32) -> u32 {
+                let bg_bytes: [u8; 4] = bg.to_be_bytes();
+                let ovl_bytes: [u8; 4] = overlay.to_be_bytes();
+
+                let alpha = (overlay & 0xff) as f64 / 256.0;
+                let mix_bytes = [
+                    lerp(bg_bytes[0] as f64, ovl_bytes[0] as f64, alpha) as u8,
+                    lerp(bg_bytes[1] as f64, ovl_bytes[1] as f64, alpha) as u8,
+                    lerp(bg_bytes[2] as f64, ovl_bytes[2] as f64, alpha) as u8,
+                    0xFF,
+                ];
+
+                u32::from_be_bytes(mix_bytes)
+            }
+
+            self.set_bg(
+                &format!("#{:08X}", mix_color(BROWSER_A, a)),
+                &format!("#{:08X}", mix_color(BROWSER_B, b)),
+                &format!("#{:08X}", mix_color(BROWSER_C, c)),
+                &format!("#{:08X}", mix_color(BROWSER_D, d)),
+            );
+        }
+
+        fn set_bg(&self, a: &str, b: &str, c: &str, d: &str) {
+            let css = format!(
+                "
+    window {{
+        background:
+        linear-gradient(45deg,  transparent 55%, {b}),
+        linear-gradient(45deg, {c}, transparent 45%),
+        linear-gradient(-45deg, {d}, {a});
+    }}
+
+    * {{
+        text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;
+        font-weight: 600;
+    }}
+    "
+            );
+
+            /*let css = format!(
+                "window {{
+    background:
+    radial-gradient(circle at 100% 0, {b}, transparent 70%),
+    radial-gradient(circle at 0 100%, {c}, transparent 70%),
+    linear-gradient(-45deg, {d}, {a}),
+    ;
+    }}"
+            );*/
+            self.css_provider.load_from_string(&css);
         }
     }
 }

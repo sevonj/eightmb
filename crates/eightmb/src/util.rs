@@ -32,9 +32,9 @@ pub fn validate_filename(slice: &[u8]) -> Result<(), MemcardError> {
     const ALLOWED_RANGE: std::ops::RangeInclusive<u8> = 0x20..=0x7e;
     const ILLEGAL_CHARS: [u8; 3] = [b'*', b'/', b'?'];
 
-    if slice[0] == 0 {
-        return Err(MemcardError::FilenameIsEmpty);
-    }
+    // if slice[0] == 0 {
+    //     return Err(MemcardError::FilenameIsEmpty);
+    // }
 
     for c in slice {
         if *c == 0 {

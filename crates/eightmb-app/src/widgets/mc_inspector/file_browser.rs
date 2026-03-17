@@ -7,24 +7,29 @@ mod imp {
     use std::cell::RefCell;
     use std::io::BufReader;
     use std::sync::Arc;
+    use std::sync::OnceLock;
 
     use adw::NavigationPage;
-    use adw::prelude::NavigationPageExt;
     use adw::prelude::*;
     use adw::subclass::prelude::*;
+    use gtk::CompositeTemplate;
+    use gtk::CssProvider;
+    use gtk::ListBox;
+    #[allow(deprecated)]
+    use gtk::StyleContext;
+    use gtk::Widget;
+    use gtk::glib;
+    use gtk::glib::clone;
+    use gtk::glib::property::PropertySet;
+    use gtk::glib::subclass::Signal;
+
     use eightmb::memcard::Directory;
     use eightmb::memcard::Entry;
     use eightmb::memcard::IconSys;
     use eightmb::memcard::MemcardError;
-    use eightmb::memcard::SaveIcon;
-    use gtk::CompositeTemplate;
-    use gtk::ListBox;
-    use gtk::Widget;
-    use gtk::glib;
-
     use eightmb::memcard::MemoryCard;
-    use gtk::glib::clone;
-    use gtk::glib::property::PropertySet;
+    use eightmb::memcard::SaveIcon;
+    use eightmb::memcard::Vec4;
 
     use super::fat_entry_row::FatEntryRow;
     use super::save_view::SaveView;
@@ -33,6 +38,7 @@ mod imp {
     #[template(resource = "/eightmb/ui/mc_inspector/file_browser.ui")]
     pub struct FileBrowser {
         memcard: OnceCell<Arc<MemoryCard>>,
+        css_provider: CssProvider,
 
         #[template_child]
         sidebar: TemplateChild<NavigationPage>,
@@ -60,6 +66,23 @@ mod imp {
     }
 
     impl ObjectImpl for FileBrowser {
+        fn signals() -> &'static [Signal] {
+            static SIGNALS: OnceLock<Vec<Signal>> = OnceLock::new();
+            SIGNALS.get_or_init(|| {
+                vec![
+                    Signal::builder("set-bg")
+                        .param_types([
+                            u32::static_type(),
+                            u32::static_type(),
+                            u32::static_type(),
+                            u32::static_type(),
+                        ])
+                        .build(),
+                    Signal::builder("clear-bg").build(),
+                ]
+            })
+        }
+
         fn constructed(&self) {
             let obj = self.obj();
 
@@ -69,7 +92,38 @@ mod imp {
                 move |_, _| obj.imp().on_row_selected()
             ));
 
+            #[allow(deprecated)]
+            StyleContext::add_provider_for_display(
+                &WidgetExt::display(obj.as_ref()),
+                &self.css_provider,
+                999,
+            );
+            self.css_provider
+                .load_from_string(".sidebar-pane { background: transparent; font-weight: 600; }");
+
             self.parent_constructed();
+        }
+
+        fn properties() -> &'static [glib::ParamSpec] {
+            &[]
+        }
+
+        fn set_property(&self, _id: usize, _value: &glib::Value, _pspec: &glib::ParamSpec) {
+            std::unimplemented!()
+        }
+
+        fn property(&self, _id: usize, _pspec: &glib::ParamSpec) -> glib::Value {
+            std::unimplemented!()
+        }
+
+        fn dispose(&self) {}
+
+        fn notify(&self, pspec: &glib::ParamSpec) {
+            self.parent_notify(pspec)
+        }
+
+        fn dispatch_properties_changed(&self, pspecs: &[glib::ParamSpec]) {
+            self.parent_dispatch_properties_changed(pspecs)
         }
     }
 
@@ -117,7 +171,10 @@ mod imp {
         }
 
         fn on_row_selected(&self) {
+            let obj = self.obj();
             self.set_preview_widget(None);
+
+            obj.emit_by_name::<()>("clear-bg", &[]);
 
             let Some(row) = self
                 .listbox
@@ -139,6 +196,7 @@ mod imp {
         }
 
         fn load_save_preview(&self, save_dir_entry: &Entry) -> Result<(), MemcardError> {
+            let obj = self.obj();
             let memcard = self.memcard();
             let save_dir = memcard.read_directory(save_dir_entry)?;
 
@@ -152,6 +210,20 @@ mod imp {
             else {
                 return Ok(());
             };
+
+            fn pack_bg_color(col: Vec4, opacity: u32) -> u32 {
+                (col.x << 24) + (col.y << 16) + (col.z << 8) + opacity
+            }
+
+            obj.emit_by_name::<()>(
+                "set-bg",
+                &[
+                    &pack_bg_color(iconsys.bg_color_a, iconsys.bg_opacity),
+                    &pack_bg_color(iconsys.bg_color_b, iconsys.bg_opacity),
+                    &pack_bg_color(iconsys.bg_color_c, iconsys.bg_opacity),
+                    &pack_bg_color(iconsys.bg_color_d, iconsys.bg_opacity),
+                ],
+            );
 
             let list_icon = save_dir.entry_by_name(&iconsys.list_icon()).and_then(|e| {
                 memcard

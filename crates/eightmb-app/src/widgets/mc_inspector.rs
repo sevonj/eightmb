@@ -9,6 +9,7 @@ mod imp {
     use adw::prelude::*;
     use adw::subclass::prelude::*;
     use gtk::glib;
+    use gtk::glib::closure_local;
     use gtk::glib::property::PropertySet;
     use gtk::glib::subclass::Signal;
     use gtk::glib::types::StaticType;
@@ -39,6 +40,15 @@ mod imp {
                     Signal::builder("toast")
                         .param_types([String::static_type()])
                         .build(),
+                    Signal::builder("set-bg")
+                        .param_types([
+                            u32::static_type(),
+                            u32::static_type(),
+                            u32::static_type(),
+                            u32::static_type(),
+                        ])
+                        .build(),
+                    Signal::builder("clear-bg").build(),
                 ]
             })
         }
@@ -67,6 +77,30 @@ mod imp {
             if let Err(e) = file_browser.refresh_fs() {
                 obj.emit_by_name::<()>("toast", &[&e.to_string()]);
             };
+
+            file_browser.connect_closure(
+                "set-bg",
+                true,
+                closure_local!(
+                    #[weak]
+                    obj,
+                    move |_: FileBrowser, a: u32, b: u32, c: u32, d: u32| {
+                        obj.emit_by_name::<()>("set-bg", &[&a, &b, &c, &d]);
+                    }
+                ),
+            );
+
+            file_browser.connect_closure(
+                "clear-bg",
+                true,
+                closure_local!(
+                    #[weak]
+                    obj,
+                    move |_: FileBrowser| {
+                        obj.emit_by_name::<()>("clear-bg", &[]);
+                    }
+                ),
+            );
         }
     }
 }

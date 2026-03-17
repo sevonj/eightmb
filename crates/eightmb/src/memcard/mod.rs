@@ -16,7 +16,7 @@ pub use directory::Directory;
 pub use entry::Entry;
 pub use error::MemcardError;
 pub use fat::Fat;
-pub use icon_sys::IconSys;
+pub use icon_sys::{IconSys, Vec4};
 pub use page::Page;
 pub use save_icon::SaveIcon;
 pub use superblock::Superblock;
