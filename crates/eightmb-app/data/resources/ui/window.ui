@@ -59,7 +59,7 @@
         <attribute name="action">win.show-help-overlay</attribute>
       </item>
       <item>
-        <attribute name="label" translatable="yes">About Scratchmark</attribute>
+        <attribute name="label" translatable="yes">About EightMB</attribute>
         <attribute name="action">win.show-about</attribute>
       </item>
     </section>
