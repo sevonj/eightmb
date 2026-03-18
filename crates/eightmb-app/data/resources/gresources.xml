@@ -7,9 +7,11 @@
     <file preprocess="xml-stripblanks" compressed="true">ui/mc_inspector/save_view.ui</file>
     <file preprocess="xml-stripblanks" compressed="true">ui/about_dialog.ui</file>
     <file preprocess="xml-stripblanks" compressed="true">ui/no_card_status_page.ui</file>
+    <file preprocess="xml-stripblanks" compressed="true">ui/primary_menu.ui</file>
     <file preprocess="xml-stripblanks" compressed="true">ui/window.ui</file>
   </gresource>
   <gresource prefix="/eightmb">
+    <file preprocess="xml-stripblanks">memcard.svg</file>
     <file preprocess="xml-stripblanks">icons/scalable/actions/ps2-memcard-symbolic.svg</file>
   </gresource>
   <gresource prefix="/eightmb">

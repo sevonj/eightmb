@@ -75,9 +75,7 @@ impl FatEntryRow {
         imp.title_row.set_margin_start(12 * depth);
         if depth == 0 {
             imp.name_label.set_text("Memory Card");
-            imp.icon.set_resource(Some(
-                "/eightmb/icons/scalable/actions/ps2-memcard-symbolic.svg",
-            ));
+            imp.icon.set_resource(Some("/eightmb/memcard.svg"));
         } else if entry.is_dir() {
             imp.icon.set_icon_name(Some("folder-symbolic"));
         } else {

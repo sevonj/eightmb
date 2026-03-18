@@ -1,17 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
     <template class="NoCardStatusPage" parent="AdwBin">
-        <property name="hexpand">True</property>
-        <property name="vexpand">True</property>
-        <property name="halign">GTK_ALIGN_CENTER</property>
-        <property name="width-request">500</property>
         <child>
-            <object class="AdwStatusPage">
-                <property name="title" translatable="yes">No Data</property>
-                <property name="description" translatable="yes">Drop a memory card image here</property>
-                <style>
-                    <class name="compact" />
-                </style>
+            <object class="AdwToolbarView">
+                <child type="top">
+                    <object class="AdwHeaderBar">
+                        <property name="show-title">true</property>
+                        <child type="end">
+                            <object class="GtkMenuButton" id="primary_menu_button">
+                                <property name="primary">True</property>
+                                <property name="icon-name">open-menu-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Menu</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <property name="content">
+                    <object class="AdwStatusPage" id="status_page">
+                        <property name="title" translatable="yes">No Data</property>
+                        <property name="description" translatable="yes">Drop a memory card image here</property>
+                        <style>
+                            <class name="compact" />
+                        </style>
+                    </object>
+                </property>
             </object>
         </child>
     </template>

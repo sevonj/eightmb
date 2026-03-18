@@ -1,16 +1,5 @@
 mod widgets;
 
-use std::fs::File;
-use std::io::BufReader;
-use std::path::Path;
-use std::path::PathBuf;
-
-use eightmb::memcard::Directory;
-use eightmb::memcard::Entry;
-use eightmb::memcard::IconSys;
-use eightmb::memcard::MemcardError;
-use eightmb::memcard::MemoryCard;
-
 use gtk::gio::SimpleAction;
 use gtk::glib;
 use gtk::prelude::*;
@@ -24,7 +13,6 @@ fn main() -> glib::ExitCode {
         .expect("Failed to register resources.");
 
     let app = adw::Application::builder().application_id(APP_ID).build();
-    setup_accels(&app);
 
     app.connect_activate(|app| {
         if let Some(window) = app.windows().first() {
@@ -42,10 +30,7 @@ fn main() -> glib::ExitCode {
     app.run()
 }
 
-fn setup_accels(app: &adw::Application) {
-    app.set_accels_for_action("win.eat-inspector", &["<ctrl><Shift>I"]);
-    app.set_accels_for_action("win.eat-adaptive-preview", &["<ctrl><Shift>M"]);
-}
+/*
 
 fn main_old() {
     const PROJECT_ROOT_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -67,7 +52,7 @@ fn main_old() {
     //println!("{:02X?}", root_dir_page.raw);
     //memcard.print_ind_fat();
 
-    let rootdir = memcard.root_directory().unwrap();
+    //let rootdir = memcard.root_directory().unwrap();
 
     //println!("{}", rootdir.dot);
     //println!("{}", rootdir.dotdot);
@@ -75,13 +60,13 @@ fn main_old() {
     //    println!("{}", entry);
     //}
 
-    let fs_dir = temp_dir.join("filesystem");
-    std::fs::create_dir_all(&fs_dir).unwrap();
+    // let fs_dir = temp_dir.join("filesystem");
+    // std::fs::create_dir_all(&fs_dir).unwrap();
 
     //print_fs_tree(&memcard);
 
     //dump_entry(&memcard, 500, &fs_dir.join("fail"));
-    dump_filesystem(&memcard, &rootdir, &fs_dir);
+    //dump_filesystem(&memcard, &rootdir, &fs_dir);
 
     //let entry = Entry::read(&mut reader).unwrap();
 
@@ -90,6 +75,9 @@ fn main_old() {
     //println!("modified: {}", entry.modified);
 }
 
+*/
+
+/*
 fn dump_entry(memcard: &MemoryCard, cluster: usize, out_path: &Path) {
     let raw = memcard.read_entry(cluster).unwrap();
     std::fs::write(out_path, &raw).unwrap();
@@ -172,3 +160,4 @@ fn print_fs_tree(memcard: &MemoryCard) {
     println!("/");
     print_inner(memcard, &root, "/");
 }
+*/

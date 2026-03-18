@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.14" />
+  <requires lib="libadwaita" version="1.5" />
+  <menu id="primary-menu">
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Open Memory Card</attribute>
+        <attribute name="action">win.open-memcard</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Dump File System</attribute>
+        <attribute name="action">win.dump-filesystem</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="label" translatable="yes">Preferences</attribute>
+        <attribute name="action">win.preferences</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">Keyboard Shortcuts</attribute>
+        <attribute name="action">win.show-help-overlay</attribute>
+      </item>
+      <item>
+        <attribute name="label" translatable="yes">About EightMB</attribute>
+        <attribute name="action">win.show-about</attribute>
+      </item>
+    </section>
+  </menu>
+</interface>

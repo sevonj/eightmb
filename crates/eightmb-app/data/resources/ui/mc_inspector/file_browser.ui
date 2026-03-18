@@ -2,17 +2,27 @@
 <interface>
     <template class="FileBrowser" parent="AdwBin">
         <child>
-            <object class="AdwNavigationSplitView">
+            <object class="AdwOverlaySplitView">
                 <property name="sidebar">
                     <object class="AdwNavigationPage" id="sidebar">
                         <property name="title" translatable="no">Files</property>
                         <property name="child">
-                            <object class="GtkScrolledWindow" id="scrolled_window">
+                            <object class="AdwToolbarView">
+                                <!--child type="top">
+                                    <object class="AdwHeaderBar">
+                                        <property name="show-title">false</property>
+                                    </object>
+                                </child-->
                                 <child>
-                                    <object class="GtkListBox" id="listbox">
-                                        <style>
-                                            <class name="navigation-sidebar" />
-                                        </style>
+                                    <object class="GtkScrolledWindow">
+                                        <property name="width-request">256</property>
+                                        <child>
+                                            <object class="GtkListBox" id="listbox">
+                                                <style>
+                                                    <class name="navigation-sidebar" />
+                                                </style>
+                                            </object>
+                                        </child>
                                     </object>
                                 </child>
                             </object>
@@ -20,11 +30,22 @@
                     </object>
                 </property>
                 <property name="content">
-                    <object class="AdwNavigationPage" id="content">
+                    <object class="AdwNavigationPage">
                         <property name="title" translatable="no">Preview</property>
                         <property name="child">
-                            <object class="GtkLabel">
-                                <property name="label" translatable="yes">Content</property>
+                            <object class="AdwToolbarView" id="toolbar_view">
+                                <child type="top">
+                                    <object class="AdwHeaderBar">
+                                        <property name="show-title">false</property>
+                                        <child type="end">
+                                            <object class="GtkMenuButton" id="primary_menu_button">
+                                                <property name="primary">True</property>
+                                                <property name="icon-name">open-menu-symbolic</property>
+                                                <property name="tooltip-text" translatable="yes">Menu</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
                             </object>
                         </property>
                     </object>

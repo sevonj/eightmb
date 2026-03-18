@@ -10,7 +10,6 @@ mod imp {
     use adw::ApplicationWindow;
     use adw::Toast;
     use adw::ToastOverlay;
-    use adw::ToolbarView;
     use adw::lerp;
     use adw::prelude::*;
     use adw::subclass::prelude::*;
@@ -45,8 +44,6 @@ mod imp {
 
         #[template_child]
         toast_overlay: TemplateChild<ToastOverlay>,
-        #[template_child]
-        main_toolbar_view: TemplateChild<ToolbarView>,
     }
 
     #[glib::object_subclass]
@@ -254,11 +251,11 @@ mod imp {
         }
 
         fn set_content(&self, widget: Option<Widget>) {
-            if let Some(old) = self.child.take() {
-                self.main_toolbar_view.remove(&old);
+            if let Some(_old) = self.child.take() {
+                self.toast_overlay.set_child(None::<&Widget>);
             }
             if let Some(new) = widget {
-                self.main_toolbar_view.set_content(Some(&new));
+                self.toast_overlay.set_child(Some(&new));
                 self.child.set(Some(new));
             }
         }
@@ -310,13 +307,18 @@ mod imp {
                 "
     window {{
         background:
-        linear-gradient(45deg,  transparent 55%, {b}),
-        linear-gradient(45deg, {c}, transparent 45%),
-        linear-gradient(-45deg, {d}, {a});
+            linear-gradient(45deg, transparent 55%, {b}),
+            linear-gradient(45deg, {c}, transparent 45%),
+            linear-gradient(-45deg, {d}, {a});
     }}
 
     * {{
-        text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000, 0 0 2px #000;
+        text-shadow:
+            0 0 2px #000,
+            0 0 2px #000,
+            0 0 2px #000,
+            0 0 2px #000,
+            0 0 2px #000;
         font-weight: 600;
     }}
     "

@@ -10,14 +10,18 @@ mod imp {
     use std::sync::OnceLock;
 
     use adw::NavigationPage;
+    use adw::ToolbarView;
     use adw::prelude::*;
     use adw::subclass::prelude::*;
+    use gtk::Builder;
     use gtk::CompositeTemplate;
     use gtk::CssProvider;
     use gtk::ListBox;
+    use gtk::MenuButton;
     #[allow(deprecated)]
     use gtk::StyleContext;
     use gtk::Widget;
+    use gtk::gio::MenuModel;
     use gtk::glib;
     use gtk::glib::clone;
     use gtk::glib::property::PropertySet;
@@ -43,7 +47,9 @@ mod imp {
         #[template_child]
         sidebar: TemplateChild<NavigationPage>,
         #[template_child]
-        content: TemplateChild<NavigationPage>,
+        toolbar_view: TemplateChild<ToolbarView>,
+        #[template_child]
+        primary_menu_button: TemplateChild<MenuButton>,
         #[template_child]
         listbox: TemplateChild<ListBox>,
 
@@ -84,6 +90,8 @@ mod imp {
         }
 
         fn constructed(&self) {
+            self.parent_constructed();
+
             let obj = self.obj();
 
             self.listbox.connect_row_selected(clone!(
@@ -92,16 +100,8 @@ mod imp {
                 move |_, _| obj.imp().on_row_selected()
             ));
 
-            #[allow(deprecated)]
-            StyleContext::add_provider_for_display(
-                &WidgetExt::display(obj.as_ref()),
-                &self.css_provider,
-                999,
-            );
-            self.css_provider
-                .load_from_string(".sidebar-pane { background: transparent; font-weight: 600; }");
-
-            self.parent_constructed();
+            self.setup_primary_menu();
+            self.setup_style();
         }
 
         fn properties() -> &'static [glib::ParamSpec] {
@@ -166,7 +166,7 @@ mod imp {
         }
 
         pub(super) fn set_preview_widget(&self, widget: Option<Widget>) {
-            self.content.set_child(widget.as_ref());
+            self.toolbar_view.set_content(widget.as_ref());
             self.preview_widget.set(widget);
         }
 
@@ -257,6 +257,30 @@ mod imp {
 
         pub(super) fn bind(&self, memcard: Arc<MemoryCard>) {
             self.memcard.set(memcard).expect("bind once");
+        }
+
+        fn setup_primary_menu(&self) {
+            let builder = Builder::from_resource("/eightmb/ui/primary_menu.ui");
+            let menu_model: MenuModel = builder.object("primary-menu").expect("builder");
+            self.primary_menu_button.set_menu_model(Some(&menu_model));
+        }
+
+        fn setup_style(&self) {
+            let obj = self.obj();
+            #[allow(deprecated)]
+            StyleContext::add_provider_for_display(
+                &WidgetExt::display(obj.as_ref()),
+                &self.css_provider,
+                999,
+            );
+            self.css_provider.load_from_string(
+                ".sidebar-pane {
+                background: transparent;
+                background:
+                    linear-gradient(90deg, #0007, #0000);
+                font-weight: 600;
+                }",
+            );
         }
     }
 }

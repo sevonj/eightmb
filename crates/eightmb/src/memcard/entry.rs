@@ -104,26 +104,40 @@ impl Entry {
     }
 
     pub fn read<R: Read>(reader: &mut R) -> Result<Self, MemcardError> {
-        let mut entry = Self::default();
-        entry.mode = read_u16(reader)?;
+        let mode = read_u16(reader)?;
         reader.read_exact(&mut [0; 2])?; // align
-        entry.len = read_u32(reader)?;
-        entry.created = Timestamp::read(reader)?;
-        entry.cluster = read_u32(reader)?;
-        entry.dir_entry = read_u32(reader)?;
-        entry.modified = Timestamp::read(reader)?;
-        entry.attr = read_u32(reader)?;
+        let len = read_u32(reader)?;
+        let created = Timestamp::read(reader)?;
+        let cluster = read_u32(reader)?;
+        let dir_entry = read_u32(reader)?;
+        let modified = Timestamp::read(reader)?;
+        let attr = read_u32(reader)?;
         reader.read_exact(&mut [0; 0x1c])?; // align
-        reader.read_exact(&mut entry.name)?;
+        let mut name = [0_u8; 32];
+        reader.read_exact(&mut name)?;
         reader.read_exact(&mut [0; 0x1a0])?; // unused space?
 
-        entry.validate()?;
-        Ok(entry)
+        Self {
+            mode,
+            len,
+            created,
+            cluster,
+            dir_entry,
+            modified,
+            attr,
+            name,
+        }
+        .validated()
     }
 
     pub fn validate(&self) -> Result<(), MemcardError> {
         validate_filename(self.name.as_slice())?;
         Ok(())
+    }
+
+    pub fn validated(self) -> Result<Self, MemcardError> {
+        self.validate()?;
+        Ok(self)
     }
 }
 
