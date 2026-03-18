@@ -76,6 +76,9 @@ mod imp {
             static SIGNALS: OnceLock<Vec<Signal>> = OnceLock::new();
             SIGNALS.get_or_init(|| {
                 vec![
+                    Signal::builder("toast")
+                        .param_types([String::static_type()])
+                        .build(),
                     Signal::builder("set-bg")
                         .param_types([
                             u32::static_type(),
@@ -170,6 +173,10 @@ mod imp {
             self.preview_widget.set(widget);
         }
 
+        fn toast(&self, text: &str) {
+            self.obj().emit_by_name::<()>("toast", &[&text]);
+        }
+
         fn on_row_selected(&self) {
             let obj = self.obj();
             self.set_preview_widget(None);
@@ -208,6 +215,7 @@ mod imp {
                 .read_entry(iconsys_entry.cluster as usize)
                 .and_then(|raw| IconSys::read(&mut BufReader::new(raw.as_slice())))
             else {
+                self.toast("Failed to read icon.sys file");
                 return Ok(());
             };
 
@@ -225,26 +233,48 @@ mod imp {
                 ],
             );
 
-            let list_icon = save_dir.entry_by_name(&iconsys.list_icon()).and_then(|e| {
-                memcard
-                    .read_entry(e.cluster as usize)
+            let list_icon = match save_dir.entry_by_name(&iconsys.list_icon()) {
+                Some(entry) => match memcard
+                    .read_entry(entry.cluster as usize)
                     .and_then(|raw| SaveIcon::read(&mut BufReader::new(raw.as_slice())))
-                    .ok()
-            });
+                {
+                    Ok(icon) => Some(icon),
+                    Err(e) => {
+                        self.toast(&format!("Failed to read list icon: {e}"));
+                        None
+                    }
+                },
+                None => {
+                    self.toast("No list icon!");
+                    None
+                }
+            };
             let copy_icon = iconsys.copy_icon().and_then(|name| {
-                save_dir.entry_by_name(&name).and_then(|e| {
-                    memcard
-                        .read_entry(e.cluster as usize)
+                save_dir.entry_by_name(&name).and_then(|entry| {
+                    match memcard
+                        .read_entry(entry.cluster as usize)
                         .and_then(|raw| SaveIcon::read(&mut BufReader::new(raw.as_slice())))
-                        .ok()
+                    {
+                        Ok(icon) => Some(icon),
+                        Err(e) => {
+                            self.toast(&format!("Failed to read copy icon: {e}"));
+                            None
+                        }
+                    }
                 })
             });
             let delete_icon = iconsys.delete_icon().and_then(|name| {
-                save_dir.entry_by_name(&name).and_then(|e| {
-                    memcard
-                        .read_entry(e.cluster as usize)
+                save_dir.entry_by_name(&name).and_then(|entry| {
+                    match memcard
+                        .read_entry(entry.cluster as usize)
                         .and_then(|raw| SaveIcon::read(&mut BufReader::new(raw.as_slice())))
-                        .ok()
+                    {
+                        Ok(icon) => Some(icon),
+                        Err(e) => {
+                            self.toast(&format!("Failed to read delete icon: {e}"));
+                            None
+                        }
+                    }
                 })
             });
 

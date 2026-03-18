@@ -66,6 +66,10 @@ mod imp {
             self.memcard.get().expect("bound")
         }
 
+        fn toast(&self, text: &str) {
+            self.obj().emit_by_name::<()>("toast", &[&text]);
+        }
+
         pub(super) fn bind(&self, memcard: MemoryCard) {
             let obj = self.obj();
 
@@ -77,6 +81,16 @@ mod imp {
             if let Err(e) = file_browser.refresh_fs() {
                 obj.emit_by_name::<()>("toast", &[&e.to_string()]);
             };
+
+            file_browser.connect_closure(
+                "toast",
+                true,
+                closure_local!(
+                    #[weak]
+                    obj,
+                    move |_: FileBrowser, text: &str| { obj.imp().toast(text) }
+                ),
+            );
 
             file_browser.connect_closure(
                 "set-bg",
