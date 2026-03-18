@@ -1,6 +1,7 @@
 mod imp {
     use std::cell::OnceCell;
     use std::ffi::CString;
+    use std::mem::size_of;
     use std::ptr;
 
     use adw::subclass::prelude::*;
@@ -19,6 +20,7 @@ mod imp {
     pub struct SaveIconView {
         save_icon: OnceCell<SaveIcon>,
         program: OnceCell<u32>,
+        texture: OnceCell<u32>,
     }
 
     #[glib::object_subclass]
@@ -46,12 +48,18 @@ mod imp {
 
             let save_icon = self.save_icon.get().unwrap();
 
-            let mut vertices: Vec<f32> = Vec::with_capacity(save_icon.vertices.len());
-
+            // XYZ_UV_RGBA
+            let mut vbuf: Vec<f32> = Vec::with_capacity(save_icon.vertices.len());
             for v in &save_icon.vertices {
-                vertices.push(v.coords[0].x as f32 / 0x1000 as f32 * 0.3);
-                vertices.push(-v.coords[0].y as f32 / 0x1000 as f32 * 0.3 - 0.5);
-                vertices.push(v.coords[0].z as f32 / 0x1000 as f32 * 0.3);
+                vbuf.push(v.coords[0].x as f32 / 0x1000 as f32 * 0.3);
+                vbuf.push(-v.coords[0].y as f32 / 0x1000 as f32 * 0.3 - 0.5);
+                vbuf.push(v.coords[0].z as f32 / 0x1000 as f32 * 0.3);
+                vbuf.push(v.u as f32 / 0x1000 as f32);
+                vbuf.push(v.v as f32 / 0x1000 as f32);
+                vbuf.push(v.rgba[0] as f32 / 0xff as f32);
+                vbuf.push(v.rgba[1] as f32 / 0xff as f32);
+                vbuf.push(v.rgba[2] as f32 / 0xff as f32);
+                vbuf.push(v.rgba[3] as f32 / 0xff as f32);
             }
 
             let libepoxy =
@@ -65,6 +73,7 @@ mod imp {
             gl::load_with(epoxy::get_proc_addr);
 
             unsafe {
+                // Shaders
                 const VERT_SOURCE: &str = include_str!("../../../../data/shaders/basic.vs");
                 const FRAG_SOURCE: &str = include_str!("../../../../data/shaders/basic.fs");
                 let vert_shad = compile_shader(VERT_SOURCE, gl::VERTEX_SHADER);
@@ -72,6 +81,7 @@ mod imp {
                 let program = link_program(vert_shad, frag_shad);
                 self.program.set(program).expect("bind once");
 
+                // Vertex
                 let mut vao = 0;
                 let mut vbo = 0;
 
@@ -83,21 +93,43 @@ mod imp {
                 gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
                 gl::BufferData(
                     gl::ARRAY_BUFFER,
-                    (vertices.len() * std::mem::size_of::<f32>()) as isize,
-                    vertices.as_ptr() as *const _,
+                    (vbuf.len() * size_of::<f32>()) as isize,
+                    vbuf.as_ptr() as *const _,
                     gl::STATIC_DRAW,
                 );
 
-                gl::VertexAttribPointer(
-                    0,
-                    3,
-                    gl::FLOAT,
-                    gl::FALSE,
-                    3 * std::mem::size_of::<f32>() as i32,
-                    ptr::null(),
-                );
-
+                let stride = (3 + 2 + 4) * size_of::<f32>() as i32;
+                let uv_off = 3 * size_of::<f32>() as i32;
+                let rgba_off = (uv_off + 2) * size_of::<f32>() as i32;
+                gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, ptr::null());
                 gl::EnableVertexAttribArray(0);
+                gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, stride, uv_off as *const _);
+                gl::EnableVertexAttribArray(1);
+                gl::VertexAttribPointer(2, 4, gl::FLOAT, gl::FALSE, stride, rgba_off as *const _);
+                gl::EnableVertexAttribArray(2);
+
+                // Texture
+                let mut texture = 0;
+                gl::GenTextures(1, &mut texture);
+                gl::BindTexture(gl::TEXTURE_2D, texture);
+                self.texture.set(texture).expect("bind once");
+
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+
+                gl::TexImage2D(
+                    gl::TEXTURE_2D,
+                    0,
+                    gl::RGBA as i32,
+                    128,
+                    128,
+                    0,
+                    gl::RGBA,
+                    gl::UNSIGNED_BYTE,
+                    save_icon.texture.as_ref().as_ptr() as *const _,
+                );
             }
         }
 
@@ -125,6 +157,10 @@ mod imp {
                 let program = *self.program.get().expect("bound");
 
                 gl::UseProgram(program);
+
+                gl::ActiveTexture(gl::TEXTURE0);
+                gl::BindTexture(gl::TEXTURE_2D, *self.texture.get().expect("bound"));
+
                 gl::DrawArrays(gl::TRIANGLES, 0, index_count);
             }
 

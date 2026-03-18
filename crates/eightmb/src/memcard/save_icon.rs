@@ -38,6 +38,7 @@ pub struct SaveIcon {
     pub unk_0xc: u32,
     pub num_vertices: u32,
     pub vertices: Vec<Vertex>,
+    pub texture: Box<[u32; 128 * 128]>,
 }
 
 impl SaveIcon {
@@ -46,17 +47,19 @@ impl SaveIcon {
     pub fn read<R: Read>(reader: &mut R) -> Result<Self, MemcardError> {
         let magic = read_u32(reader)?;
         let num_anim_shapes = read_u32(reader)?;
-        let tex_flags = read_u32(reader)?;
+        let tex_type = read_u32(reader)?;
         let unk_0xc = read_u32(reader)?;
         let num_vertices = read_u32(reader)?;
 
         let mut save_icon = Self {
             magic,
             num_anim_shapes,
-            tex_flags,
+            tex_flags: tex_type,
             unk_0xc,
             num_vertices,
             vertices: Vec::with_capacity(num_vertices as usize),
+            // default to black
+            texture: Box::new([0xff000000; 128 * 128]),
         };
 
         for _ in 0..num_vertices {
@@ -81,6 +84,67 @@ impl SaveIcon {
                 rgba,
             });
         }
+
+        fn unpack_a1b5g5r5<R: Read>(
+            reader: &mut R,
+            save_icon: &mut SaveIcon,
+        ) -> Result<(), MemcardError> {
+            for px in save_icon.texture.as_mut() {
+                let mut buf = [0_u8; 2];
+                reader.read_exact(&mut buf)?;
+                let packed = u16::from_le_bytes(buf);
+                let r = (packed << 3) as u8;
+                let g = (packed >> 2) as u8 & 0b11111000;
+                let b = (packed >> 7) as u8 & 0b11111000;
+                *px = u32::from_le_bytes([r, g, b, 0xff]);
+            }
+            Ok(())
+        }
+
+        println!("tex_flags: {tex_type:02X?}");
+
+        // Values encountered so far:
+        // - 0x0F           (Burnout 3, Ratchet 2, Armored Core 2)
+        // - 0x07 ?1B5G5R5
+        // - 0x06 ?1B5G5R5  (Dog's Life)
+        // - 0x03 NONE      (ICO, Sly 2, Sly 3)
+        match tex_type {
+            0x07 | 0x06 => unpack_a1b5g5r5(reader, &mut save_icon)?,
+            0x03 => (),
+            v => println!("unknown texture type {v:X?}"),
+        }
+
+        /*{
+            println!("compressed");
+            let compressed_len = read_u32(reader)? as usize;
+            let mut data = Vec::with_capacity(128 * 128 * 2);
+
+            let mut read_off = 0;
+            while read_off < compressed_len {
+                let rle = read_i16(reader)?;
+                let repeat = rle < 0;
+                println!("  rle: {rle}");
+
+                if repeat {
+                    let times = 0x8000 + rle as usize;
+                    println!("  rep: {times}");
+                    let mut buf = vec![0; 2];
+                    reader.read_exact(&mut buf)?;
+                    for _ in 0..times {
+                        data.extend_from_slice(&buf);
+                    }
+                    read_off += 4;
+                } else {
+                    let bytes = rle as usize * 2;
+                    println!("norep: {bytes}");
+                    let mut buf = vec![0; bytes];
+                    reader.read_exact(&mut buf)?;
+                    data.append(&mut buf);
+                    read_off += bytes + 2;
+                }
+            }
+            unpack_a1b5g5r5(&mut BufReader::new(data.as_slice()), &mut save_icon)?;
+        }*/
 
         Ok(save_icon)
     }

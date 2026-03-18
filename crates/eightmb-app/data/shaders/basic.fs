@@ -1,5 +1,14 @@
 #version 320 es
+
+in mediump vec2 vUV;
+in mediump vec4 vColor;
+
 out mediump vec4 FragColor;
+
+uniform sampler2D tex;
+
 void main() {
-    FragColor = vec4(0.0,1.0,1.0,1.0);
+    mediump vec4 sampled = texture(tex, vUV);
+    FragColor.rgb = mix(sampled.rgb, vColor.rgb, vColor.a);
+    FragColor.a = sampled.a;
 }
