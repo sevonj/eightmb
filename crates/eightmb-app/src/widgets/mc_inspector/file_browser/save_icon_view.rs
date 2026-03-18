@@ -92,8 +92,8 @@ mod imp {
 
             unsafe {
                 // Shaders
-                const VERT_SOURCE: &str = include_str!("../../../../data/shaders/basic.vs");
-                const FRAG_SOURCE: &str = include_str!("../../../../data/shaders/basic.fs");
+                const VERT_SOURCE: &str = include_str!("../../../../data/shaders/save_icon.vs");
+                const FRAG_SOURCE: &str = include_str!("../../../../data/shaders/save_icon.fs");
                 let vert_shad = compile_shader(VERT_SOURCE, gl::VERTEX_SHADER);
                 let frag_shad = compile_shader(FRAG_SOURCE, gl::FRAGMENT_SHADER);
                 let program = link_program(vert_shad, frag_shad);

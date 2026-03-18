@@ -9,6 +9,6 @@ uniform sampler2D tex;
 
 void main() {
     mediump vec4 sampled = texture(tex, vUV);
-    FragColor.rgb = mix(sampled.rgb, vColor.rgb, vColor.a);
+    FragColor.rgb = mix(sampled.rgb, sampled.rgb + vColor.rgb, vColor.a);
     FragColor.a = sampled.a;
 }
