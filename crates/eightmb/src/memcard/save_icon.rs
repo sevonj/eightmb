@@ -101,8 +101,6 @@ impl SaveIcon {
             Ok(())
         }
 
-        println!("tex_flags: {tex_type:02X?}");
-
         // Values encountered so far:
         // - 0x0F           (Burnout 3, Ratchet 2, Armored Core 2)
         // - 0x07 ?1B5G5R5

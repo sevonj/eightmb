@@ -7,8 +7,10 @@ layout (location = 2) in vec4 aColor;
 out mediump vec2 vUV;
 out mediump vec4 vColor;
 
+uniform mat4 transform;
+
 void main() {
-    gl_Position = vec4(aPos, 1.0);
+    gl_Position = transform * vec4(aPos, 1.0);
     vUV = aUV;
     vColor = aColor;
 }      

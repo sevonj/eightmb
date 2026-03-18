@@ -3,24 +3,25 @@ mod imp {
     use std::ffi::CString;
     use std::mem::size_of;
     use std::ptr;
+    use std::time::Instant;
 
     use adw::subclass::prelude::*;
     use eightmb::memcard::SaveIcon;
+    use glam::Mat4;
+    use glam::vec3;
     use gtk::GLArea;
     use gtk::gdk::GLContext;
     use gtk::glib;
     use gtk::glib::Propagation;
-    use gtk::prelude::GLAreaExt;
+    use gtk::prelude::{GLAreaExt, WidgetExt, WidgetExtManual};
     use libloading::os::unix::Library;
-
-    // const SHITTY_TRIANGLE: [f32; 9] = [-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
-    // const SHITTIER_TRIANGLE: [f32; 9] = [0.5, 0.5, 0.0, -0.5, 0.5, 0.0, 0.0, -0.5, 0.0];
 
     #[derive(Default)]
     pub struct SaveIconView {
         save_icon: OnceCell<SaveIcon>,
         program: OnceCell<u32>,
         texture: OnceCell<u32>,
+        start_time: OnceCell<Instant>,
     }
 
     #[glib::object_subclass]
@@ -33,6 +34,22 @@ mod imp {
     impl ObjectImpl for SaveIconView {
         fn constructed(&self) {
             self.parent_constructed();
+
+            let obj = self.obj();
+
+            obj.set_has_depth_buffer(true);
+
+            obj.add_tick_callback(move |obj, _| {
+                obj.queue_render();
+                glib::ControlFlow::Continue
+            });
+
+            obj.connect_resize(|area, width, height| {
+                area.make_current();
+                unsafe {
+                    gl::Viewport(0, 0, width, height);
+                }
+            });
         }
     }
 
@@ -42,17 +59,18 @@ mod imp {
             let obj = self.obj();
             obj.make_current();
             if let Some(e) = obj.error() {
-                println!("{e}");
+                println!("'{e}'");
                 return;
             }
 
             let save_icon = self.save_icon.get().unwrap();
+            self.start_time.set(Instant::now()).expect("bind once");
 
             // XYZ_UV_RGBA
             let mut vbuf: Vec<f32> = Vec::with_capacity(save_icon.vertices.len());
             for v in &save_icon.vertices {
                 vbuf.push(v.coords[0].x as f32 / 0x1000 as f32 * 0.3);
-                vbuf.push(-v.coords[0].y as f32 / 0x1000 as f32 * 0.3 - 0.5);
+                vbuf.push(-v.coords[0].y as f32 / 0x1000 as f32 * 0.3);
                 vbuf.push(v.coords[0].z as f32 / 0x1000 as f32 * 0.3);
                 vbuf.push(v.u as f32 / 0x1000 as f32);
                 vbuf.push(v.v as f32 / 0x1000 as f32);
@@ -130,6 +148,11 @@ mod imp {
                     gl::UNSIGNED_BYTE,
                     save_icon.texture.as_ref().as_ptr() as *const _,
                 );
+
+                // Misc
+                gl::Enable(gl::DEPTH_TEST);
+                gl::Enable(gl::BLEND);
+                gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
             }
         }
 
@@ -149,15 +172,32 @@ mod imp {
 
             obj.make_current();
 
+            let t = self
+                .start_time
+                .get()
+                .expect("bound")
+                .elapsed()
+                .as_secs_f32();
+
+            let aspect = obj.width() as f32 / obj.height() as f32;
+            let projection = Mat4::perspective_rh_gl(60.0_f32.to_radians(), aspect, 0.01, 10.0);
+
+            let rotation = Mat4::from_rotation_y(-t * 0.4);
+            let translation = Mat4::from_translation(vec3(0., -0.1, -0.5));
+            let scale = Mat4::from_scale(vec3(0.2, 0.2, -0.2));
+            let transform = projection * translation * rotation * scale;
+
             let index_count = self.save_icon.get().expect("bound").num_vertices as i32;
             unsafe {
-                gl::ClearColor(0.0, 0.0, 0.0, 0.0);
-                gl::Clear(gl::COLOR_BUFFER_BIT);
-
                 let program = *self.program.get().expect("bound");
+                let location = gl::GetUniformLocation(program, c"transform".as_ptr() as _);
+
+                gl::ClearColor(0.0, 0.0, 0.0, 0.0);
+                gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 
                 gl::UseProgram(program);
 
+                gl::UniformMatrix4fv(location, 1, gl::FALSE, transform.as_ref() as *const f32);
                 gl::ActiveTexture(gl::TEXTURE0);
                 gl::BindTexture(gl::TEXTURE_2D, *self.texture.get().expect("bound"));
 

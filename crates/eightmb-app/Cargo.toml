@@ -14,6 +14,7 @@ gettext-rs = { version = "0.7", features = ["gettext-system"] }
 gl = "0.14.0"
 epoxy = "0.1.0"
 libloading = "0.9.0"
+glam = "0.32.1"
 
 [build-dependencies]
 glib-build-tools = "0.22.0"
