@@ -95,8 +95,8 @@ mod imp {
     impl AdwApplicationWindowImpl for Window {}
 
     impl Window {
-        fn toast(&self, title: &str) {
-            self.toast_overlay.add_toast(Toast::new(title));
+        fn toast(&self, text: &str) {
+            self.toast_overlay.add_toast(Toast::new(text));
         }
 
         fn try_open_memcard(&self, path: &Path) {
