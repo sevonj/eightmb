@@ -223,13 +223,14 @@ mod imp {
                 (col.x << 24) + (col.y << 16) + (col.z << 8) + opacity
             }
 
+            let opacity = (iconsys.bg_opacity * 2) & 0xff;
             obj.emit_by_name::<()>(
                 "set-bg",
                 &[
-                    &pack_bg_color(iconsys.bg_color_a, iconsys.bg_opacity),
-                    &pack_bg_color(iconsys.bg_color_b, iconsys.bg_opacity),
-                    &pack_bg_color(iconsys.bg_color_c, iconsys.bg_opacity),
-                    &pack_bg_color(iconsys.bg_color_d, iconsys.bg_opacity),
+                    &pack_bg_color(iconsys.bg_color_a, opacity),
+                    &pack_bg_color(iconsys.bg_color_b, opacity),
+                    &pack_bg_color(iconsys.bg_color_c, opacity),
+                    &pack_bg_color(iconsys.bg_color_d, opacity),
                 ],
             );
 
