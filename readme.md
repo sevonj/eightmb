@@ -24,7 +24,9 @@ Basic features:
 - [x] icon.sys parse
 - [x] Display icon.sys Show background gradients
 - [x] Display save icon meshes
-- [ ] Display save icon textures
+- Display save icon textures
+    - [x] uncompressed
+    - [ ] compressed
 - [ ] Display save icon lighting
 - [ ] Display save icon animation
 
