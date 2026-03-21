@@ -1,8 +1,6 @@
 mod imp {
 
     use std::cell::RefCell;
-    use std::fs::File;
-    use std::io::BufReader;
     use std::path::Path;
     use std::path::PathBuf;
 
@@ -108,8 +106,7 @@ mod imp {
         fn open_memcard(&self, path: &Path) -> Result<(), MemcardError> {
             let obj = self.obj();
             println!("opening: {path:?}");
-            let mut reader = BufReader::new(File::open(path)?);
-            let memcard = MemoryCard::read(&mut reader)?;
+            let memcard = MemoryCard::new(std::fs::read(path)?)?;
             let insp = McInspector::new(memcard);
             insp.connect_closure(
                 "toast",
@@ -283,7 +280,7 @@ mod imp {
                 let bg_bytes: [u8; 4] = bg.to_be_bytes();
                 let ovl_bytes: [u8; 4] = overlay.to_be_bytes();
 
-                let alpha = (overlay & 0xff) as f64 / 255.0 ;
+                let alpha = (overlay & 0xff) as f64 / 255.0;
                 let mix_bytes = [
                     lerp(bg_bytes[0] as f64, ovl_bytes[0] as f64, alpha) as u8,
                     lerp(bg_bytes[1] as f64, ovl_bytes[1] as f64, alpha) as u8,
