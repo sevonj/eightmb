@@ -1,4 +1,5 @@
 mod directory;
+pub mod ecc;
 mod entry;
 mod error;
 mod icon_sys;
