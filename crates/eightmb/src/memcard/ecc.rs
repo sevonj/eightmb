@@ -43,7 +43,7 @@ pub fn calc_ecc(data: &[u8; 128]) -> [u8; 3] {
     let mut line_parity_0: u8 = 0x7F;
     let mut line_parity_1: u8 = 0x7F;
     for (i, b) in data.iter().enumerate() {
-        column_parity ^= COLUMN_PARITY_MASKS[*b as usize] as u8;
+        column_parity ^= COLUMN_PARITY_MASKS[*b as usize];
         if PARITY_TABLE[*b as usize] != 0 {
             line_parity_0 ^= !i as u8;
             line_parity_1 ^= i as u8;
