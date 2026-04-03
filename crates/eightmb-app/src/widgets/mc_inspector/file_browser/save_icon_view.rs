@@ -68,16 +68,29 @@ mod imp {
 
             // XYZ_UV_RGBA
             let mut vbuf: Vec<f32> = Vec::with_capacity(save_icon.vertices.len());
-            for v in &save_icon.vertices {
+            let is_smooth = save_icon.is_smooth_shaded();
+            let mut rgba = [0f32; 4];
+            //let mut normal = [0f32; 4];
+            for (i, v) in save_icon.vertices.iter().enumerate() {
                 vbuf.push(v.coords[0].x as f32 / 0x1000 as f32 * 0.3);
                 vbuf.push(-v.coords[0].y as f32 / 0x1000 as f32 * 0.3);
                 vbuf.push(v.coords[0].z as f32 / 0x1000 as f32 * 0.3);
                 vbuf.push(v.u as f32 / 0x1000 as f32);
                 vbuf.push(v.v as f32 / 0x1000 as f32);
-                vbuf.push(v.rgba[0] as f32 / 0xff as f32);
-                vbuf.push(v.rgba[1] as f32 / 0xff as f32);
-                vbuf.push(v.rgba[2] as f32 / 0xff as f32);
-                vbuf.push(v.rgba[3] as f32 / 0xff as f32);
+                if is_smooth {
+                    vbuf.push(v.rgba[0] as f32 / 0xff as f32);
+                    vbuf.push(v.rgba[1] as f32 / 0xff as f32);
+                    vbuf.push(v.rgba[2] as f32 / 0xff as f32);
+                    vbuf.push(v.rgba[3] as f32 / 0xff as f32);
+                } else {
+                    if i % 3 == 0 {
+                        rgba[0] = v.rgba[0] as f32 / 0xff as f32;
+                        rgba[1] = v.rgba[1] as f32 / 0xff as f32;
+                        rgba[2] = v.rgba[2] as f32 / 0xff as f32;
+                        rgba[3] = v.rgba[3] as f32 / 0xff as f32;
+                    }
+                    vbuf.extend_from_slice(&rgba);
+                }
             }
 
             let libepoxy =
