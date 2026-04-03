@@ -118,7 +118,7 @@ mod imp {
 
                 let stride = (3 + 2 + 4) * size_of::<f32>() as i32;
                 let uv_off = 3 * size_of::<f32>() as i32;
-                let rgba_off = (uv_off + 2) * size_of::<f32>() as i32;
+                let rgba_off = uv_off + 2 * size_of::<f32>() as i32;
                 gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, ptr::null());
                 gl::EnableVertexAttribArray(0);
                 gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, stride, uv_off as *const _);
