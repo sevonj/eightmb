@@ -34,7 +34,8 @@ pub struct Vertex {
 pub struct SaveIcon {
     pub magic: u32,
     pub num_anim_shapes: u32,
-    pub tex_flags: u32,
+    /// Lowest 4 bits.
+    pub flags: u32,
     pub unk_0xc: u32,
     pub num_vertices: u32,
     pub vertices: Vec<Vertex>,
@@ -43,18 +44,38 @@ pub struct SaveIcon {
 
 impl SaveIcon {
     pub const MAGIC: u32 = 0x010000;
+    pub const FLAG_COMPRESSED: u32 = 0b1000;
+    pub const FLAG_TEXTURE: u32 = 0b0100;
+    pub const FLAG_UNKWNOWN: u32 = 0b0010;
+    pub const FLAG_SHADE_SMOOTH: u32 = 0b0001;
+
+    pub const fn is_compressed(&self) -> bool {
+        self.flags & Self::FLAG_COMPRESSED != 0
+    }
+
+    pub const fn has_texture(&self) -> bool {
+        self.flags & Self::FLAG_TEXTURE != 0
+    }
+
+    pub const fn is_flag_unknown(&self) -> bool {
+        self.flags & Self::FLAG_UNKWNOWN != 0
+    }
+
+    pub const fn is_smooth_shaded(&self) -> bool {
+        self.flags & Self::FLAG_SHADE_SMOOTH != 0
+    }
 
     pub fn read<R: Read>(reader: &mut R) -> Result<Self, MemcardError> {
         let magic = read_u32(reader)?;
         let num_anim_shapes = read_u32(reader)?;
-        let tex_type = read_u32(reader)?;
+        let flags = read_u32(reader)?;
         let unk_0xc = read_u32(reader)?;
         let num_vertices = read_u32(reader)?;
 
         let mut save_icon = Self {
             magic,
             num_anim_shapes,
-            tex_flags: tex_type,
+            flags,
             unk_0xc,
             num_vertices,
             vertices: Vec::with_capacity(num_vertices as usize),
@@ -101,48 +122,47 @@ impl SaveIcon {
             Ok(())
         }
 
-        // Values encountered so far:
-        // - 0x0F           (Burnout 3, Ratchet 2, Armored Core 2)
-        // - 0x07 ?1B5G5R5
-        // - 0x06 ?1B5G5R5  (Dog's Life)
-        // - 0x03 NONE      (ICO, Sly 2, Sly 3)
-        match tex_type {
-            0x07 | 0x06 => unpack_a1b5g5r5(reader, &mut save_icon)?,
-            0x03 => (),
-            v => println!("unknown texture type {v:X?}"),
+        if !save_icon.has_texture() {
+            return Ok(save_icon);
         }
 
-        /*{
-            println!("compressed");
-            let compressed_len = read_u32(reader)? as usize;
-            let mut data = Vec::with_capacity(128 * 128 * 2);
+        if save_icon.is_compressed() {
+            println!("compressed textures not implemented");
+            return Ok(save_icon);
+            /*{
+                println!("compressed");
+                let compressed_len = read_u32(reader)? as usize;
+                let mut data = Vec::with_capacity(128 * 128 * 2);
 
-            let mut read_off = 0;
-            while read_off < compressed_len {
-                let rle = read_i16(reader)?;
-                let repeat = rle < 0;
-                println!("  rle: {rle}");
+                let mut read_off = 0;
+                while read_off < compressed_len {
+                    let rle = read_i16(reader)?;
+                    let repeat = rle < 0;
+                    println!("  rle: {rle}");
 
-                if repeat {
-                    let times = 0x8000 + rle as usize;
-                    println!("  rep: {times}");
-                    let mut buf = vec![0; 2];
-                    reader.read_exact(&mut buf)?;
-                    for _ in 0..times {
-                        data.extend_from_slice(&buf);
+                    if repeat {
+                        let times = 0x8000 + rle as usize;
+                        println!("  rep: {times}");
+                        let mut buf = vec![0; 2];
+                        reader.read_exact(&mut buf)?;
+                        for _ in 0..times {
+                            data.extend_from_slice(&buf);
+                        }
+                        read_off += 4;
+                    } else {
+                        let bytes = rle as usize * 2;
+                        println!("norep: {bytes}");
+                        let mut buf = vec![0; bytes];
+                        reader.read_exact(&mut buf)?;
+                        data.append(&mut buf);
+                        read_off += bytes + 2;
                     }
-                    read_off += 4;
-                } else {
-                    let bytes = rle as usize * 2;
-                    println!("norep: {bytes}");
-                    let mut buf = vec![0; bytes];
-                    reader.read_exact(&mut buf)?;
-                    data.append(&mut buf);
-                    read_off += bytes + 2;
                 }
-            }
-            unpack_a1b5g5r5(&mut BufReader::new(data.as_slice()), &mut save_icon)?;
-        }*/
+                unpack_a1b5g5r5(&mut BufReader::new(data.as_slice()), &mut save_icon)?;
+            }*/
+        }
+
+        unpack_a1b5g5r5(reader, &mut save_icon)?;
 
         Ok(save_icon)
     }
